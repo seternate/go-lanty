@@ -1,0 +1,15 @@
+# ignore everything
+*
+
+# whitelist
+!.gitignore
+!go.mod
+!go.sum
+
+!*.md
+!*.go
+
+!cmd/
+!pkg/
+!pkg/handlers/
+!pkg/route/

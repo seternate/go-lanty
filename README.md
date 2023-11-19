@@ -1,0 +1,1 @@
+# Golang Lanty server application
