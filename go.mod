@@ -1,4 +1,4 @@
-module github.com/seternate/go-lanty-server
+module github.com/seternate/go-lanty
 
 go 1.20
 
