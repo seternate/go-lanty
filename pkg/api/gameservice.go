@@ -18,7 +18,7 @@ type GameService struct {
 	client *Client
 }
 
-func (service *GameService) GetList() (game.Games, error) {
+func (service *GameService) GetList() ([]string, error) {
 	request, err := service.client.newRESTRequest(http.MethodGet, "/games", nil, nil)
 	if err != nil {
 		return nil, err
@@ -35,13 +35,35 @@ func (service *GameService) GetList() (game.Games, error) {
 		return nil, err
 	}
 
-	games := game.Games{}
-	err = json.Unmarshal(bodyData, &games)
+	list := make([]string, 50)
+	err = json.Unmarshal(bodyData, &list)
 	if err != nil {
 		return nil, err
 	}
 
-	return games, nil
+	return list, nil
+}
+
+func (service *GameService) GetGame(slug string) (game game.Game, err error) {
+	path, _ := service.client.router.Get("GetGame").URLPath("slug", slug)
+	request, err := service.client.newRESTRequest(http.MethodGet, path.Path, nil, nil)
+	if err != nil {
+		return
+	}
+
+	response, err := service.client.doREST(request)
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+
+	bodyData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(bodyData, &game)
+	return
 }
 
 func (service *GameService) GetIcon(game game.Game) (image.Image, error) {
