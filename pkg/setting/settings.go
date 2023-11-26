@@ -1,6 +1,6 @@
 package setting
 
-import "github.com/seternate/go-lanty-server/pkg/filesystem"
+import "github.com/seternate/go-lanty/pkg/filesystem"
 
 const (
 	SETTINGS_PATH = "settings.yaml"

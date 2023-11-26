@@ -8,10 +8,10 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/seternate/go-lanty-server/pkg/game"
-	"github.com/seternate/go-lanty-server/pkg/handler"
-	"github.com/seternate/go-lanty-server/pkg/router"
-	"github.com/seternate/go-lanty-server/pkg/setting"
+	"github.com/seternate/go-lanty/pkg/game"
+	"github.com/seternate/go-lanty/pkg/handler"
+	"github.com/seternate/go-lanty/pkg/router"
+	"github.com/seternate/go-lanty/pkg/setting"
 )
 
 func main() {

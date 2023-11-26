@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/seternate/go-lanty-server/pkg/filesystem"
+	"github.com/seternate/go-lanty/pkg/filesystem"
 )
 
 type Game struct {

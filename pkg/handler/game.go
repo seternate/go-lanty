@@ -9,9 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
-	"github.com/seternate/go-lanty-server/pkg/filesystem"
-	"github.com/seternate/go-lanty-server/pkg/game"
-	"github.com/seternate/go-lanty-server/pkg/network"
+	"github.com/seternate/go-lanty/pkg/filesystem"
+	"github.com/seternate/go-lanty/pkg/game"
+	"github.com/seternate/go-lanty/pkg/network"
 )
 
 type GameHandler struct {

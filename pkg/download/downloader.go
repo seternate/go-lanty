@@ -3,7 +3,7 @@ package download
 import (
 	"sort"
 
-	"github.com/seternate/go-lanty-server/pkg/game"
+	"github.com/seternate/go-lanty/pkg/game"
 	"golang.org/x/exp/maps"
 )
 

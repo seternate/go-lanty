@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 
-	"github.com/seternate/go-lanty-server/pkg/network"
-	"github.com/seternate/go-lanty-server/pkg/user"
+	"github.com/seternate/go-lanty/pkg/network"
+	"github.com/seternate/go-lanty/pkg/user"
 )
 
 type UserHandler struct {

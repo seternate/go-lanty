@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/seternate/go-lanty-server/pkg/handler"
+	"github.com/seternate/go-lanty/pkg/handler"
 )
 
 func UserRoutes(h *handler.Handler) (routes Routes) {

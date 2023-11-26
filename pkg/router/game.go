@@ -1,6 +1,6 @@
 package router
 
-import "github.com/seternate/go-lanty-server/pkg/handler"
+import "github.com/seternate/go-lanty/pkg/handler"
 
 func GameRoutes(h *handler.Handler) (routes Routes) {
 	handler := h.GameHandler

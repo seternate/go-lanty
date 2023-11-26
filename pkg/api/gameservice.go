@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/seternate/go-lanty-server/pkg/download"
-	"github.com/seternate/go-lanty-server/pkg/game"
+	"github.com/seternate/go-lanty/pkg/download"
+	"github.com/seternate/go-lanty/pkg/game"
 )
 
 type GameService struct {

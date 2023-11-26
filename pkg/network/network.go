@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/seternate/go-lanty-server/pkg/filesystem"
+	"github.com/seternate/go-lanty/pkg/filesystem"
 )
 
 func GetOutboundIP() net.IP {

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/seternate/go-lanty-server/pkg/router"
+	"github.com/seternate/go-lanty/pkg/router"
 )
 
 type Client struct {

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/seternate/go-lanty-server/pkg/user"
+	"github.com/seternate/go-lanty/pkg/user"
 )
 
 type UserService struct {

@@ -2,9 +2,9 @@ package handler
 
 import (
 	"github.com/rs/zerolog/log"
-	"github.com/seternate/go-lanty-server/pkg/game"
-	"github.com/seternate/go-lanty-server/pkg/setting"
-	"github.com/seternate/go-lanty-server/pkg/user"
+	"github.com/seternate/go-lanty/pkg/game"
+	"github.com/seternate/go-lanty/pkg/setting"
+	"github.com/seternate/go-lanty/pkg/user"
 )
 
 type Handler struct {

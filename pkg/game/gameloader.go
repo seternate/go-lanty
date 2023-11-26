@@ -4,7 +4,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/seternate/go-lanty-server/pkg/filesystem"
+	"github.com/seternate/go-lanty/pkg/filesystem"
 )
 
 func LoadFromDirectory(d string) (games Games, err error) {
