@@ -45,4 +45,13 @@ type Route struct {
 	Pattern     string
 	HandlerFunc http.HandlerFunc
 }
-type Routes []Route
+type Routes map[string]Route
+
+func (r Route) UpdateHandlerFunc(f http.HandlerFunc) Route {
+	r.HandlerFunc = f
+	return r
+}
+
+func (r *Routes) UpdateHandlerFunc(key string, f http.HandlerFunc) {
+	(*r)[key] = (*r)[key].UpdateHandlerFunc(f)
+}

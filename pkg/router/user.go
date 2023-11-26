@@ -5,16 +5,19 @@ import (
 )
 
 func UserRoutes(h *handler.Handler) (routes Routes) {
-	handler := h.UserHandler
-	if handler == nil {
+	routes = Routes{
+		"GetUsers": Route{"GetUsers", "GET", "/users", nil},
+		"GetUser":  Route{"GetUser", "GET", "/users/{name:(?:[a-z]|[0-9]|-)+}", nil},
+		"PostUser": Route{"PostUser", "POST", "/users", nil},
+	}
+
+	if h == nil || h.UserHandler == nil {
 		return
 	}
 
-	routes = Routes{
-		Route{"GetUsers", "GET", "/users", handler.GetUsers},
-		Route{"GetUser", "GET", "/users/{name:(?:[a-z]|[0-9]|-)+}", handler.GetUser},
-		Route{"PostUser", "POST", "/users", handler.PostUser},
-	}
+	routes.UpdateHandlerFunc("GetUsers", h.UserHandler.GetUsers)
+	routes.UpdateHandlerFunc("GetUser", h.UserHandler.GetUser)
+	routes.UpdateHandlerFunc("PostUser", h.UserHandler.PostUser)
 
 	return
 }
