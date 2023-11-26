@@ -1,0 +1,46 @@
+package handler
+
+import (
+	"context"
+
+	"github.com/rs/zerolog/log"
+	"github.com/seternate/go-lanty/pkg/game"
+	"github.com/seternate/go-lanty/pkg/setting"
+	"golang.org/x/sync/errgroup"
+)
+
+type Handler struct {
+	Setting         *setting.Settings
+	Gamehandler     *Gamehandler
+	Userhandler     *Userhandler
+	Downloadhandler *Downloadhandler
+}
+
+func NewHandler(settings *setting.Settings) *Handler {
+	return &Handler{
+		Setting:         settings,
+		Gamehandler:     nil,
+		Userhandler:     nil,
+		Downloadhandler: nil,
+	}
+}
+
+func (handler *Handler) WithGamehandler() *Handler {
+	games, err := game.LoadFromDirectory(handler.Setting.GameConfigDirectory)
+	if err != nil {
+		log.Fatal().Err(err).Str("directory", handler.Setting.GameConfigDirectory).Msg("failed to load game configuration files")
+	}
+	log.Debug().Int("size", games.Size()).Msg("successfully loaded games from configuration files")
+	handler.Gamehandler = NewGameHandler(handler, games)
+	return handler
+}
+
+func (handler *Handler) WithUserhandler(ctx context.Context, errgrp *errgroup.Group) *Handler {
+	handler.Userhandler = NewUserHandler(ctx, errgrp, handler)
+	return handler
+}
+
+func (handler *Handler) WithDownloadHandler() *Handler {
+	handler.Downloadhandler = NewDownloadHandler(handler)
+	return handler
+}
