@@ -5,11 +5,19 @@
 !.gitignore
 !go.mod
 !go.sum
+!settings.yaml
 
 !*.md
 !*.go
 
 !cmd/
 !pkg/
-!pkg/handlers/
-!pkg/route/
+!pkg/api/
+!pkg/download/
+!pkg/filesystem/
+!pkg/game/
+!pkg/handler/
+!pkg/network/
+!pkg/router/
+!pkg/setting/
+!pkg/user/
