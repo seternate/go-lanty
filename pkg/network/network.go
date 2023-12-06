@@ -1,9 +1,7 @@
 package network
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -12,37 +10,31 @@ import (
 	"github.com/seternate/go-lanty/pkg/filesystem"
 )
 
-func GetOutboundIP() net.IP {
+func GetOutboundIP() (ip net.IP, err error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
-	return localAddr.IP
-}
-
-func ServeFileData(f string, w http.ResponseWriter, req *http.Request) (err error) {
-	contentType, err := filesystem.DetectContentTypeOfFile(f)
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Can not detect content type of file '%s'", f))
 		return
 	}
+	defer conn.Close()
+	ip = conn.LocalAddr().(*net.UDPAddr).IP
+	return
+}
+
+func ServeFileData(file string, w http.ResponseWriter, req *http.Request) (err error) {
+	contentType, _ := filesystem.DetectContentTypeOfFile(file)
 
 	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(f)))
-	if req.Method == http.MethodHead {
-		fi, err := os.Stat(f)
-		if err != nil {
-			err = errors.New(fmt.Sprintf("Can not determine filesize of '%s'", f))
-		}
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", fi.Size()))
-		w.WriteHeader(200)
-	} else if req.Method == http.MethodGet {
-		http.ServeFile(w, req, f)
-	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(file)))
 
-	return nil
+	if req.Method == http.MethodHead {
+		fileInfo, err := os.Stat(file)
+		if err != nil {
+			return err
+		}
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+		w.WriteHeader(http.StatusOK)
+	} else if req.Method == http.MethodGet {
+		http.ServeFile(w, req, file)
+	}
+	return
 }

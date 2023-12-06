@@ -5,48 +5,57 @@ import (
 	"encoding/json"
 	"image"
 	"image/png"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 
-	"github.com/seternate/go-lanty/pkg/download"
 	"github.com/seternate/go-lanty/pkg/game"
+	"github.com/seternate/go-lanty/pkg/network"
 )
 
 type GameService struct {
 	client *Client
 }
 
-func (service *GameService) GetList() ([]string, error) {
-	request, err := service.client.newRESTRequest(http.MethodGet, "/games", nil, nil)
+func (service *GameService) GetGames() (games []string, err error) {
+	path, err := service.client.router.Get("GetGames").URLPath()
 	if err != nil {
-		return nil, err
+		return
+	}
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
+	if err != nil {
+		return
 	}
 
 	response, err := service.client.doREST(request)
 	if err != nil {
-		return nil, err
+		return
 	}
 	defer response.Body.Close()
 
-	bodyData, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	slugs := make([]string, 0, 50)
+	err = json.Unmarshal(body, &slugs)
 	if err != nil {
 		return nil, err
 	}
+	slices.Sort(slugs)
 
-	list := make([]string, 50)
-	err = json.Unmarshal(bodyData, &list)
-	if err != nil {
-		return nil, err
-	}
-
-	return list, nil
+	return slugs, nil
 }
 
 func (service *GameService) GetGame(slug string) (game game.Game, err error) {
-	path, _ := service.client.router.Get("GetGame").URLPath("slug", slug)
-	request, err := service.client.newRESTRequest(http.MethodGet, path.Path, nil, nil)
+	path, err := service.client.router.Get("GetGame").URLPath("slug", slug)
+	if err != nil {
+		return
+	}
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
 	if err != nil {
 		return
 	}
@@ -57,77 +66,69 @@ func (service *GameService) GetGame(slug string) (game game.Game, err error) {
 	}
 	defer response.Body.Close()
 
-	bodyData, err := ioutil.ReadAll(response.Body)
+	gamejson, err := io.ReadAll(response.Body)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(bodyData, &game)
+	err = json.Unmarshal(gamejson, &game)
 	return
 }
 
-func (service *GameService) GetIcon(game game.Game) (image.Image, error) {
-	request, err := service.client.newRESTRequest(http.MethodHead, "games/"+game.Slug+"/download/icon", nil, nil)
+func (service *GameService) GetIcon(game game.Game) (image image.Image, err error) {
+	path, err := service.client.router.Get("GetGameDownloadIcon").URLPath("slug", game.Slug)
 	if err != nil {
-		return nil, err
-	}
-	response, err := service.client.doREST(request)
-	response.Body.Close()
-	if err != nil {
-		return nil, err
+		return
 	}
 
-	download, err := download.NewDownload(response)
+	download, err := network.NewDownload(service.client.BuildURL(*path))
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	buf := bytes.NewBuffer(nil)
-	err = download.Start(buf)
+	err = download.Download(buf)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	//TODO: LOGIC TO USE RIGHT DECODER RATHER THAN JUST PNG
 
-	image, err := png.Decode(buf)
+	image, err = png.Decode(buf)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	return image, nil
-
 }
 
-func (service *GameService) GetFile(game game.Game, directory string) (*download.Download, error) {
-	request, err := service.client.newRESTRequest(http.MethodHead, "games/"+game.Slug+"/download", nil, nil)
+func (service *GameService) Download(game game.Game, directory string) (download *network.Download, err error) {
+	path, err := service.client.router.Get("GetGameDownload").URLPath("slug", game.Slug)
 	if err != nil {
-		return nil, err
-	}
-	response, err := service.client.doREST(request)
-	response.Body.Close()
-	if err != nil {
-		return nil, err
+		return
 	}
 
-	download, err := download.NewDownload(response)
+	download, err = network.NewDownload(service.client.BuildURL(*path))
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	path := filepath.Join(directory, download.Filename)
+	filepath := filepath.Join(directory, download.Filename)
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		os.MkdirAll(directory, 0755)
 	}
-	out, err := os.Create(path)
+
+	file, err := os.Create(filepath)
 	if err != nil {
-		return nil, err
+		return
 	}
 
+	download.StartDownload(file)
+
 	go func() {
-		download.Start(out)
-		out.Close()
+		<-download.Done
+		file.Close()
 	}()
 
-	return download, nil
+	return
 }

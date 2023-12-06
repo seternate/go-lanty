@@ -2,10 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
@@ -14,86 +11,84 @@ import (
 	"github.com/seternate/go-lanty/pkg/network"
 )
 
-type GameHandler struct {
-	handler *Handler
-	Games   map[string]game.Game
+type Gamehandler struct {
+	parent *Handler
+	Games  game.Games
 }
 
-func (h *GameHandler) GetGames(w http.ResponseWriter, req *http.Request) {
-	keys := make([]string, 0, len(h.Games))
-	for k := range h.Games {
-		keys = append(keys, k)
-	}
-
-	response, err := json.Marshal(keys)
+func (handler *Gamehandler) GetGames(w http.ResponseWriter, req *http.Request) {
+	slugsjson, err := json.Marshal(handler.Games.Slugs())
 	if err != nil {
+		log.Error().Err(err).Msg("failed to encode game slug list")
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Msg("Failed to encode keys of Games map")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	w.Write(slugsjson)
+	log.Trace().RawJSON("slugs", slugsjson).Msg("GET - /games")
 }
 
-func (h *GameHandler) GetGame(w http.ResponseWriter, req *http.Request) {
-	game, err := h.getGame(req)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Warn().Err(err).Send()
-		return
-	}
-
-	response, err := json.Marshal(game)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Msgf("Failed to encode game '%s'", game.Slug)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
-}
-
-func (h *GameHandler) GetGameDownload(w http.ResponseWriter, req *http.Request) {
-	h.serveGameFile(w, req, h.handler.Setting.GameFileDirectory)
-}
-
-func (h *GameHandler) GetGameDownloadIcon(w http.ResponseWriter, req *http.Request) {
-	h.serveGameFile(w, req, h.handler.Setting.GameIconDirectory)
-}
-
-func (h *GameHandler) getGame(req *http.Request) (game game.Game, err error) {
+func (handler *Gamehandler) GetGame(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	slug := vars["slug"]
-
-	game, found := h.Games[slug]
-	if found == false {
-		err = errors.New(fmt.Sprintf("No game '%s' found", slug))
-		return
-	}
-
-	return
-}
-
-func (h *GameHandler) serveGameFile(w http.ResponseWriter, req *http.Request, directory string) {
-	game, err := h.getGame(req)
+	game, err := handler.Games.Get(slug)
 	if err != nil {
+		log.Warn().Err(err).Str("slug", slug).Msg("game not available")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	file := filesystem.SearchFileByName(game.Slug, directory)[0]
-	if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
+	gamejson, err := json.Marshal(game)
+	if err != nil {
+		log.Error().Err(err).Str("slug", slug).Msg("failed to encode game")
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Msgf("Failed to retrieve binary data for '%s' in '%s'", game.Slug, directory)
 		return
 	}
 
-	err = network.ServeFileData(file, w, req)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(gamejson)
+	log.Trace().RawJSON("game", gamejson).Msg("GET - /games/:slug")
+}
+
+func (handler *Gamehandler) GetGameDownload(w http.ResponseWriter, req *http.Request) {
+	handler.serveGameFile(w, req, handler.parent.Setting.GameFileDirectory)
+	if req.Method == http.MethodHead {
+		log.Trace().Msg("HEAD - /games/:slug/download")
+	} else if req.Method == http.MethodGet {
+		log.Trace().Msg("GET - /games/:slug/download")
+	}
+}
+
+func (handler *Gamehandler) GetGameDownloadIcon(w http.ResponseWriter, req *http.Request) {
+	handler.serveGameFile(w, req, handler.parent.Setting.GameIconDirectory)
+	if req.Method == http.MethodHead {
+		log.Trace().Msg("HEAD - /games/:slug/download/icon")
+	} else if req.Method == http.MethodGet {
+		log.Trace().Msg("GET - /games/:slug/download/icon")
+	}
+}
+
+func (handler *Gamehandler) serveGameFile(w http.ResponseWriter, req *http.Request, directory string) {
+	vars := mux.Vars(req)
+	slug := vars["slug"]
+	if !handler.Games.HasGame(slug) {
+		log.Warn().Str("slug", slug).Msg("no game available")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	files, err := filesystem.SearchFileByNameLazy(slug, directory)
 	if err != nil {
-		log.Warn().Err(err).Msgf("Can not serve file '%s'", file)
+		log.Error().Err(err).Str("slug", slug).Msg("failed to retrieve binary data")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = network.ServeFileData(files[0], w, req)
+	if err != nil {
+		log.Warn().Err(err).Str("file", files[0]).Msg("failed to serve file / provide meta-info")
 	}
 }

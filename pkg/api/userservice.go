@@ -1,8 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/seternate/go-lanty/pkg/user"
@@ -12,60 +13,82 @@ type UserService struct {
 	client *Client
 }
 
-func (service *UserService) GetList() (user.Users, error) {
-	request, err := service.client.newRESTRequest(http.MethodGet, "/users", nil, nil)
+func (service *UserService) GetUsers() (users []user.User, err error) {
+	path, err := service.client.router.Get("GetUsers").URLPath()
 	if err != nil {
-		return nil, err
+		return
+	}
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
+	if err != nil {
+		return
 	}
 
 	response, err := service.client.doREST(request)
 	if err != nil {
-		return nil, err
+		return
 	}
 	defer response.Body.Close()
 
-	bodyData, err := ioutil.ReadAll(response.Body)
+	usernames, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	users := user.Users{}
-	err = json.Unmarshal(bodyData, &users)
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
+	err = json.Unmarshal(usernames, &users)
+	return
 }
 
-func (service *UserService) CreateNewUser(u user.User) (user.User, error) {
-	user := user.User{}
-
-	userJson, err := json.Marshal(u)
+func (service *UserService) GetUser(name string) (user user.User, err error) {
+	path, err := service.client.router.Get("GetUser").URLPath("name", name)
 	if err != nil {
-		return user, err
+		return
 	}
-
-	request, err := service.client.newRESTRequest(http.MethodPost, "/users", nil, userJson)
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
 	if err != nil {
-		return user, err
+		return
 	}
 
 	response, err := service.client.doREST(request)
 	if err != nil {
-		return user, err
+		return
 	}
 	defer response.Body.Close()
 
-	bodyData, err := ioutil.ReadAll(response.Body)
+	userjson, err := io.ReadAll(response.Body)
 	if err != nil {
-		return user, err
+		return
 	}
 
-	err = json.Unmarshal(bodyData, &user)
+	err = json.Unmarshal(userjson, &user)
+	return
+}
+
+func (service *UserService) CreateNewUser(user user.User) (u user.User, err error) {
+	userjson, err := json.Marshal(user)
 	if err != nil {
-		return user, err
+		return
 	}
 
-	return user, nil
+	path, err := service.client.router.Get("PostUser").URLPath()
+	if err != nil {
+		return
+	}
+	request, err := service.client.newRESTRequest(http.MethodPost, service.client.BuildURL(*path), nil, bytes.NewReader(userjson))
+	if err != nil {
+		return
+	}
+
+	response, err := service.client.doREST(request)
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+
+	userjson, err = io.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(userjson, &u)
+	return
 }

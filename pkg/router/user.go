@@ -1,23 +1,27 @@
 package router
 
 import (
+	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/pkg/handler"
 )
 
-func UserRoutes(h *handler.Handler) (routes Routes) {
+func UserRoutes(handler *handler.Handler) (routes Routes) {
 	routes = Routes{
 		"GetUsers": Route{"GetUsers", "GET", "/users", nil},
 		"GetUser":  Route{"GetUser", "GET", "/users/{name:(?:[a-z]|[0-9]|-)+}", nil},
 		"PostUser": Route{"PostUser", "POST", "/users", nil},
 	}
 
-	if h == nil || h.UserHandler == nil {
+	if handler == nil || handler.Userhandler == nil {
+		log.Trace().Msg("no HandlerFunc added to routes for users")
 		return
 	}
 
-	routes.UpdateHandlerFunc("GetUsers", h.UserHandler.GetUsers)
-	routes.UpdateHandlerFunc("GetUser", h.UserHandler.GetUser)
-	routes.UpdateHandlerFunc("PostUser", h.UserHandler.PostUser)
+	routes.UpdateHandlerFunc("GetUsers", handler.Userhandler.GetUsers)
+	routes.UpdateHandlerFunc("GetUser", handler.Userhandler.GetUser)
+	routes.UpdateHandlerFunc("PostUser", handler.Userhandler.PostUser)
+
+	log.Trace().Msg("HandlerFunc added to routes for users")
 
 	return
 }

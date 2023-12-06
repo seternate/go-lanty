@@ -2,8 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -14,92 +12,93 @@ import (
 	"github.com/seternate/go-lanty/pkg/user"
 )
 
-type UserHandler struct {
-	handler *Handler
-	Users   map[string]user.User
+type Userhandler struct {
+	parent *Handler
+	Users  map[string]user.User
 }
 
-func (h *UserHandler) GetUsers(w http.ResponseWriter, req *http.Request) {
-	keys := make([]string, 0, len(h.Users))
-	for k := range h.Users {
-		keys = append(keys, k)
+func (handler *Userhandler) GetUsers(w http.ResponseWriter, req *http.Request) {
+	names := make([]string, 0, len(handler.Users))
+	for name := range handler.Users {
+		names = append(names, name)
 	}
 
-	response, err := json.Marshal(keys)
+	namesjson, err := json.Marshal(names)
 	if err != nil {
+		log.Error().Err(err).Msg("failed to encode user name list")
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Msg("Failed to encode keys of Users map")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	w.Write(namesjson)
+	log.Trace().RawJSON("names", namesjson).Msg("GET - /users")
 }
 
-func (h *UserHandler) GetUser(w http.ResponseWriter, req *http.Request) {
-	user, err := h.getUser(req)
-	if err != nil {
+func (handler *Userhandler) GetUser(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	name := vars["name"]
+	user, found := handler.Users[name]
+	if !found {
+		log.Warn().Str("name", name).Msg("user not available")
 		w.WriteHeader(http.StatusBadRequest)
-		log.Warn().Err(err).Send()
 		return
 	}
 
-	response, err := json.Marshal(user)
+	userjson, err := json.Marshal(user)
 	if err != nil {
+		log.Error().Err(err).Str("name", name).Msg("failed to encode user")
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Error().Err(err).Msgf("Failed to encode user '%s'", user.Name)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	w.Write(userjson)
+	log.Trace().RawJSON("user", userjson).Msg("GET - /users/:name")
 }
 
-func (h *UserHandler) PostUser(w http.ResponseWriter, req *http.Request) {
+func (handler *Userhandler) PostUser(w http.ResponseWriter, req *http.Request) {
 	user := &user.User{}
-
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(user)
-
 	if err != nil {
+		log.Warn().Err(err).Msg("failed to decode user")
 		w.WriteHeader(http.StatusBadRequest)
-		log.Warn().Err(err).Msg("Can not decode user POST request")
 		return
 	}
+	log.Trace().Interface("user", user).Msg("POST - /users - Payload")
 
 	user.IP = strings.Split(req.RemoteAddr, ":")[0]
 	if user.IP == "127.0.0.1" {
-		user.IP = network.GetOutboundIP().String()
+		log.Trace().Msg("POST - /users - localhost request")
+		ip, err := network.GetOutboundIP()
+		if err != nil {
+			log.Debug().Err(err).Msg("can not retrieve local IP")
+		} else {
+			user.IP = ip.String()
+		}
 	}
 
-	if _, found := h.Users[user.Name]; found == true {
-		h.Users[user.Name] = *user
-		log.Info().Msgf("User '%s' already exists. Updating the user.", user.Name)
-		w.WriteHeader(http.StatusOK)
-	} else {
-		h.Users[user.Name] = *user
-		log.Info().Msgf("Added '%s' to UserHandler", user.Name)
-		w.WriteHeader(http.StatusCreated)
-	}
-
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(user)
+	userjson, err := json.Marshal(user)
 	if err != nil {
-		log.Error().Err(err).Send()
-	}
-}
-
-func (h *UserHandler) getUser(req *http.Request) (user user.User, err error) {
-	vars := mux.Vars(req)
-	name := vars["name"]
-
-	user, found := h.Users[name]
-	if found == false {
-		err = errors.New(fmt.Sprintf("No user '%s' found", name))
+		log.Error().Err(err).Str("name", user.Name).Msg("failed to encode user")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	return
+	_, found := handler.Users[user.Name]
+	if found {
+		log.Debug().Str("name", user.Name).Msg("updating user")
+		w.WriteHeader(http.StatusOK)
+	} else {
+		log.Debug().Str("name", user.Name).Msg("added user")
+		w.WriteHeader(http.StatusCreated)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(userjson)
+	log.Trace().RawJSON("user", userjson).Msg("POST - /users")
 }

@@ -1,4 +1,7 @@
 serverport: 8090
-game-config-directory: game-config
-game-file-directory: game-data
-game-icon-directory: game-icon
+# game-config-directory: game-config
+# game-file-directory: game-data
+# game-icon-directory: game-icon
+game-config-directory: D:\lan\game\config
+game-file-directory: D:\lan\game\data
+game-icon-directory: D:\lan\game\icon

@@ -1,10 +1,11 @@
 package router
 
 import (
+	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/pkg/handler"
 )
 
-func GameRoutes(h *handler.Handler) (routes Routes) {
+func GameRoutes(handler *handler.Handler) (routes Routes) {
 	routes = Routes{
 		"GetGames":                Route{"GetGames", "GET", "/games", nil},
 		"GetGame":                 Route{"GetGame", "GET", "/games/{slug:(?:[a-z]|[0-9]|-)+}", nil},
@@ -14,16 +15,19 @@ func GameRoutes(h *handler.Handler) (routes Routes) {
 		"GetGameDownloadIconGET":  Route{"GetGameDownloadIcon", "GET", "/games/{slug:(?:[a-z]|[0-9]|-)+}/download/icon", nil},
 	}
 
-	if h == nil || h.GameHandler == nil {
+	if handler == nil || handler.Gamehandler == nil {
+		log.Trace().Msg("no HandlerFunc added to routes for games")
 		return
 	}
 
-	routes.UpdateHandlerFunc("GetGames", h.GameHandler.GetGames)
-	routes.UpdateHandlerFunc("GetGame", h.GameHandler.GetGame)
-	routes.UpdateHandlerFunc("GetGameDownloadHEAD", h.GameHandler.GetGameDownload)
-	routes.UpdateHandlerFunc("GetGameDownloadGET", h.GameHandler.GetGameDownload)
-	routes.UpdateHandlerFunc("GetGameDownloadIconHEAD", h.GameHandler.GetGameDownloadIcon)
-	routes.UpdateHandlerFunc("GetGameDownloadIconGET", h.GameHandler.GetGameDownloadIcon)
+	routes.UpdateHandlerFunc("GetGames", handler.Gamehandler.GetGames)
+	routes.UpdateHandlerFunc("GetGame", handler.Gamehandler.GetGame)
+	routes.UpdateHandlerFunc("GetGameDownloadHEAD", handler.Gamehandler.GetGameDownload)
+	routes.UpdateHandlerFunc("GetGameDownloadGET", handler.Gamehandler.GetGameDownload)
+	routes.UpdateHandlerFunc("GetGameDownloadIconHEAD", handler.Gamehandler.GetGameDownloadIcon)
+	routes.UpdateHandlerFunc("GetGameDownloadIconGET", handler.Gamehandler.GetGameDownloadIcon)
+
+	log.Trace().Msg("HandlerFunc added to routes for games")
 
 	return
 }

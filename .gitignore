@@ -13,7 +13,6 @@
 !cmd/
 !pkg/
 !pkg/api/
-!pkg/download/
 !pkg/filesystem/
 !pkg/game/
 !pkg/handler/
@@ -21,3 +20,4 @@
 !pkg/router/
 !pkg/setting/
 !pkg/user/
+!pkg/util/

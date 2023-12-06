@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/pkg/game"
 	"github.com/seternate/go-lanty/pkg/setting"
 	"github.com/seternate/go-lanty/pkg/user"
@@ -9,34 +8,34 @@ import (
 
 type Handler struct {
 	Setting     *setting.Settings
-	GameHandler *GameHandler
-	UserHandler *UserHandler
+	Gamehandler *Gamehandler
+	Userhandler *Userhandler
 }
 
 func NewHandler(settings *setting.Settings) *Handler {
-	return &Handler{Setting: settings, GameHandler: nil}
+	return &Handler{
+		Setting:     settings,
+		Gamehandler: nil,
+		Userhandler: nil,
+	}
 }
 
-func (h *Handler) WithGameHandler(games game.Games) *Handler {
-	gameHandler := &GameHandler{
-		handler: h,
-		Games:   make(map[string]game.Game),
+func (handler *Handler) WithGamehandler(games game.Games) *Handler {
+	gamehandler := &Gamehandler{
+		parent: handler,
+		Games:  games,
 	}
-	h.GameHandler = gameHandler
+	handler.Gamehandler = gamehandler
 
-	for _, game := range games {
-		gameHandler.Games[game.Slug] = game
-		log.Debug().Msgf("Added '%s' to GamesHandler", game.Slug)
-	}
-	return h
+	return handler
 }
 
-func (h *Handler) WithUserHandler() *Handler {
-	userHandler := &UserHandler{
-		handler: h,
-		Users:   make(map[string]user.User),
+func (handler *Handler) WithUserhandler() *Handler {
+	userhandler := &Userhandler{
+		parent: handler,
+		Users:  make(map[string]user.User),
 	}
-	h.UserHandler = userHandler
+	handler.Userhandler = userhandler
 
-	return h
+	return handler
 }

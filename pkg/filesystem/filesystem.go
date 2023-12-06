@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"io/fs"
 	"net/http"
@@ -29,36 +30,55 @@ func DetectContentTypeOfFile(path string) (string, error) {
 	return http.DetectContentType(contentBuffer), nil
 }
 
-func SearchFileByName(name string, searchDirectory string) (filepaths []string) {
-	filepath.WalkDir(searchDirectory, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && strings.Contains(d.Name(), name) {
+func SearchFileByNameLazy(file string, directory string) (filepaths []string, err error) {
+	filepath.WalkDir(directory, func(path string, dirEntry fs.DirEntry, err error) error {
+		file = filepath.FromSlash(file)
+		if !dirEntry.IsDir() && strings.Split(dirEntry.Name(), ".")[0] == file {
 			filepaths = append(filepaths, path)
 		}
 		return nil
 	})
+
+	if len(filepaths) == 0 {
+		err = errors.New("no file found")
+	}
+
+	return
+}
+
+func SearchFileByName(file string, directory string) (filepaths []string, err error) {
+	filepath.WalkDir(directory, func(path string, dirEntry fs.DirEntry, err error) error {
+		file = filepath.FromSlash(file)
+		if !dirEntry.IsDir() && strings.HasSuffix(path, file) {
+			filepaths = append(filepaths, path)
+		}
+		return nil
+	})
+
+	if len(filepaths) == 0 {
+		err = errors.New("no file found")
+	}
 
 	return
 }
 
 func WriteToFile(source io.Reader, path string, mkdir bool) (err error) {
 	directory := filepath.Dir(path)
-	_, err = os.Stat(directory)
 
-	if os.IsNotExist(err) && mkdir {
+	if _, err = os.Stat(directory); os.IsNotExist(err) && mkdir {
 		err = os.MkdirAll(directory, 0775)
+		if err != nil {
+			return
+		}
 	}
 
+	file, err := os.Create(path)
 	if err != nil {
 		return
 	}
+	defer file.Close()
 
-	fileHandle, err := os.Create(path)
-	if err != nil {
-		return
-	}
-	defer fileHandle.Close()
-
-	_, err = io.Copy(fileHandle, source)
+	_, err = io.Copy(file, source)
 	if err != nil {
 		return err
 	}
@@ -66,24 +86,26 @@ func WriteToFile(source io.Reader, path string, mkdir bool) (err error) {
 	return nil
 }
 
-func LoadFromYAML(r io.Reader, v interface{}) (err error) {
-	decoder := yaml.NewDecoder(r)
+func LoadFromYAML(reader io.Reader, v interface{}) (err error) {
+	decoder := yaml.NewDecoder(reader)
 	err = decoder.Decode(v)
 	return
 }
 
-func LoadFromJSON(r io.Reader, v interface{}) (err error) {
-	decoder := json.NewDecoder(r)
+func LoadFromJSON(reader io.Reader, v interface{}) (err error) {
+	decoder := json.NewDecoder(reader)
 	err = decoder.Decode(v)
 	return
 }
 
-func LoadFromYAMLFile(f string, v interface{}) (err error) {
-	file, err := os.Open(f)
-	defer file.Close()
+func LoadFromYAMLFile(file string, v interface{}) (err error) {
+	f, err := os.Open(file)
 	if err != nil {
 		return
 	}
-	err = LoadFromYAML(file, v)
+	defer f.Close()
+
+	err = LoadFromYAML(f, v)
+
 	return
 }
