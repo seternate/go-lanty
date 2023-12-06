@@ -90,9 +90,11 @@ func (handler *Userhandler) PostUser(w http.ResponseWriter, req *http.Request) {
 
 	_, found := handler.Users[user.Name]
 	if found {
-		log.Debug().Str("name", user.Name).Msg("updating user")
+		handler.Users[user.Name] = *user
+		log.Debug().Str("name", user.Name).Msg("updated user")
 		w.WriteHeader(http.StatusOK)
 	} else {
+		handler.Users[user.Name] = *user
 		log.Debug().Str("name", user.Name).Msg("added user")
 		w.WriteHeader(http.StatusCreated)
 	}
