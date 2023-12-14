@@ -2,12 +2,11 @@ module github.com/seternate/go-lanty
 
 go 1.21
 
-require (
-	github.com/gorilla/mux v1.8.1
-)
+require github.com/gorilla/mux v1.8.1
 
 require (
 	github.com/rs/zerolog v1.31.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 	rsc.io/nop v1.0.0
 )

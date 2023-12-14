@@ -41,6 +41,14 @@ func (games Games) Slugs() []string {
 	return games.slugs
 }
 
+func (games Games) Games() (gamelist []Game) {
+	for _, slug := range games.slugs {
+		game, _ := games.Get(slug)
+		gamelist = append(gamelist, game)
+	}
+	return
+}
+
 func (games Games) Equal(g Games) bool {
 	equalSlugs := slices.Compare(games.Slugs(), g.Slugs())
 	if equalSlugs != 0 {

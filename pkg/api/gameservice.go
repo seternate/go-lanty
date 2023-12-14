@@ -113,7 +113,7 @@ func (service *GameService) Download(game game.Game, directory string) (download
 		return
 	}
 
-	filepath := filepath.Join(directory, download.Filename)
+	filepath := filepath.Join(directory, download.Filename())
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		os.MkdirAll(directory, 0755)
 	}
@@ -123,6 +123,7 @@ func (service *GameService) Download(game game.Game, directory string) (download
 		return
 	}
 
+	//TODO: maybe memory leak if download.Done will block
 	download.StartDownload(file)
 
 	go func() {

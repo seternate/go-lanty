@@ -8,7 +8,7 @@ import (
 func UserRoutes(handler *handler.Handler) (routes Routes) {
 	routes = Routes{
 		"GetUsers": Route{"GetUsers", "GET", "/users", nil},
-		"GetUser":  Route{"GetUser", "GET", "/users/{name:(?:[a-z]|[0-9]|-)+}", nil},
+		"GetUser":  Route{"GetUser", "GET", "/users/{name:(?:[a-zA-Z]|[0-9]|-)+}", nil},
 		"PostUser": Route{"PostUser", "POST", "/users", nil},
 	}
 

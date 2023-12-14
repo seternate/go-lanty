@@ -13,7 +13,7 @@ type UserService struct {
 	client *Client
 }
 
-func (service *UserService) GetUsers() (users []user.User, err error) {
+func (service *UserService) GetUsers() (users []string, err error) {
 	path, err := service.client.router.Get("GetUsers").URLPath()
 	if err != nil {
 		return

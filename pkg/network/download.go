@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -12,17 +13,19 @@ import (
 	"github.com/seternate/go-lanty/pkg/util"
 )
 
+var _ util.Publisher[float64] = &Download{}
+
 type Download struct {
 	httpclient     *http.Client
 	url            url.URL
-	alreadywritten int64
+	alreadywritten uint64
 	subscriber     []chan float64
 
-	Filename  string
-	Filesize  int64
+	filename  string
+	filesize  int64
 	Done      chan struct{}
-	StartTime time.Time
-	EndTime   time.Time
+	startTime time.Time
+	endTime   time.Time
 	Err       error
 }
 
@@ -58,9 +61,12 @@ func NewDownload(url url.URL) (download *Download, err error) {
 		httpclient:     httpclient,
 		url:            url,
 		alreadywritten: 0,
-		Filename:       filename,
-		Filesize:       response.ContentLength,
+		filename:       filename,
+		filesize:       response.ContentLength,
 		Done:           make(chan struct{}),
+		startTime:      time.Time{},
+		endTime:        time.Time{},
+		subscriber:     make([]chan float64, 0, 10),
 	}
 
 	return
@@ -72,24 +78,25 @@ func (download *Download) StartDownload(writer io.Writer) {
 
 func (download *Download) Download(writer io.Writer) (err error) {
 	defer func() {
-		close(download.Done)
 		download.notifySubscriber()
 		download.Err = err
 	}()
 
 	request, err := http.NewRequest(http.MethodGet, download.url.String(), nil)
 	if err != nil {
+		close(download.Done)
 		return
 	}
 	response, err := download.httpclient.Do(request)
 	if err != nil {
+		close(download.Done)
 		return
 	}
 	defer response.Body.Close()
 
 	buffer := make([]byte, 1024)
-	alreadywritten := int64(0)
-	download.StartTime = time.Now()
+	alreadywritten := uint64(0)
+	download.startTime = time.Now()
 
 	for {
 		var errRead, errWrite error
@@ -99,8 +106,8 @@ func (download *Download) Download(writer io.Writer) (err error) {
 		if read > 0 {
 			write, errWrite = writer.Write(buffer[0:read])
 			if write > 0 {
-				alreadywritten += int64(write)
-				atomic.StoreInt64(&download.alreadywritten, alreadywritten)
+				alreadywritten += uint64(write)
+				atomic.StoreUint64(&download.alreadywritten, alreadywritten)
 				download.notifySubscriber()
 			}
 		}
@@ -114,7 +121,8 @@ func (download *Download) Download(writer io.Writer) (err error) {
 			break
 		}
 	}
-	download.EndTime = time.Now()
+	download.endTime = time.Now()
+	close(download.Done)
 	return
 }
 
@@ -128,26 +136,49 @@ func (download *Download) IsComplete() bool {
 }
 
 func (download *Download) Progress() float64 {
-	if download.Filesize <= 0 {
+	if download.Filesize() <= 0 {
 		return 0
 	}
-	return float64(download.alreadywritten) / float64(download.Filesize)
+	return float64(download.alreadywritten) / float64(download.Filesize())
 }
 
 func (download *Download) Duration() time.Duration {
 	if download.IsComplete() {
-		return download.EndTime.Sub(download.StartTime)
+		return download.EndTime().Sub(download.StartTime())
 	}
 
-	return time.Since(download.StartTime)
+	return time.Since(download.StartTime())
 }
 
 func (download *Download) BytesPerSecond() float64 {
 	return float64(download.alreadywritten) / download.Duration().Seconds()
 }
 
+func (download *Download) Filesize() int64 {
+	return download.filesize
+}
+
+func (download *Download) Filename() string {
+	return download.filename
+}
+
+func (download *Download) StartTime() time.Time {
+	return download.startTime
+}
+
+func (download *Download) EndTime() time.Time {
+	return download.endTime
+}
+
 func (download *Download) Subscribe(subscriber chan float64) {
 	download.subscriber = append(download.subscriber, subscriber)
+}
+
+func (download *Download) Unsubscribe(subscriber chan float64) {
+	index := slices.Index(download.subscriber, subscriber)
+	if index >= 0 {
+		slices.Delete(download.subscriber, index, index+1)
+	}
 }
 
 func (download *Download) notifySubscriber() {

@@ -16,6 +16,7 @@
 !pkg/filesystem/
 !pkg/game/
 !pkg/handler/
+!pkg/logging/
 !pkg/network/
 !pkg/router/
 !pkg/setting/
