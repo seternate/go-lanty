@@ -1,0 +1,11 @@
+name: Feature Request
+description: Template for feature requests
+title: "[FEATURE] "
+labels: ["feature"]
+body:
+- type: textarea
+  attributes:
+    label: Feature Request
+    description: A clear and concise description of the feature request.
+  validations:
+    required: true

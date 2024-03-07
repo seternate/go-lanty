@@ -21,8 +21,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//TODO debug why server hangs from time to time
-
 func main() {
 	signalCtx, cancelSignalCtx := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancelSignalCtx()

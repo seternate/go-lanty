@@ -10,6 +10,9 @@
 !*.md
 !*.go
 
+!.github/
+!.github/**/
+!.github/**/*.yaml
 !cmd/
 !pkg/
 !pkg/api/
