@@ -214,7 +214,9 @@ func (arguments *Arguments) Parse() (args []string, err error) {
 			tmpArguments = tmpArguments + tmpArg
 		}
 	}
-	args = strings.Split(tmpArguments, " ")
+	if len(tmpArguments) > 0 {
+		args = strings.Split(tmpArguments, " ")
+	}
 	return
 }
 
