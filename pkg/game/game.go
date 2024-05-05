@@ -3,7 +3,6 @@ package game
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/seternate/go-lanty/pkg/game/argument"
 )
@@ -102,17 +101,15 @@ func (executable *Executable) Args() (args []string, err error) {
 	return
 }
 
-func (executable *Executable) ParseConnectArg(ip string) ([]string, error) {
+func (executable *Executable) ParseConnectArg(ip string) (connectArg []string, err error) {
 	for _, arg := range executable.Arguments.Arguments {
 		if arg.GetType() == argument.TYPE_CONNECT {
-			connectArg, err := arg.(*argument.Connect).ParseWithIP(ip)
-			if err != nil {
-				return []string{}, err
-			}
-			return strings.Split(connectArg, " "), nil
+			connectArg, err = arg.(*argument.Connect).ParseWithIP(ip)
+			return
 		}
 	}
-	return []string{}, errors.New("executable can not connect")
+	err = errors.New("executable can not connect")
+	return
 }
 
 func (left *Executable) Equal(right Executable) bool {
