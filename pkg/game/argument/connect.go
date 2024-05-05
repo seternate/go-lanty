@@ -58,12 +58,28 @@ func (argument *Connect) ValidateLazy() (err error) {
 	return
 }
 
-func (argument *Connect) ParseWithIP(ip string) (string, error) {
+func (argument *Connect) ParseWithIP(ip string) (args []string, err error) {
 	arg, err := argument.Parse(Seperator{})
 	if err != nil {
-		return "", err
+		return args, err
 	}
-	return strings.Replace(arg, "?", ip, 1), nil
+
+	arg, prefixFound := strings.CutPrefix(arg, "\"")
+	arg, suffixFound := strings.CutSuffix(arg, "\"")
+	if prefixFound && suffixFound {
+		args = append(args, arg)
+	} else if !prefixFound && !suffixFound {
+		argsSplitted := strings.Split(arg, " ")
+		args = append(args, argsSplitted...)
+	} else {
+		err = errors.New("found only one quote can not parse connect argument")
+		return
+	}
+
+	for index := range args {
+		args[index] = strings.Replace(args[index], "?", ip, -1)
+	}
+	return args, nil
 }
 
 func (argument *Connect) Reset() {}
