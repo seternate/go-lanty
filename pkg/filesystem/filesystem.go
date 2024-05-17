@@ -3,6 +3,7 @@ package filesystem
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
@@ -12,6 +13,74 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+func SearchFilesBreadthFirst(base string, file string, depth int, n int) (paths []string, err error) {
+	if n == 0 {
+		return
+	}
+
+	path := filepath.Join(base, file)
+	if _, internalErr := os.Stat(path); !errors.Is(internalErr, os.ErrNotExist) {
+		pathAbsolute, err := filepath.Abs(path)
+		paths = append(paths, pathAbsolute)
+		if err != nil {
+			return paths, err
+		}
+	}
+
+	if depth == 0 || (len(paths) >= n && n != -1) {
+		return
+	}
+
+	nodes := make([][]string, depth+1)
+	nodes[0] = []string{base}
+	for nodedepth := 1; nodedepth <= depth; nodedepth++ {
+
+		fmt.Println(nodedepth, depth)
+
+		for _, node := range nodes[nodedepth-1] {
+			childnodes, err := os.ReadDir(node)
+			if err != nil {
+				return paths, err
+			}
+			for _, childnode := range childnodes {
+				if childnode.IsDir() {
+					childnodeInfo, err := childnode.Info()
+					if err != nil {
+						return paths, err
+					}
+					childnodepath := filepath.Join(node, childnodeInfo.Name())
+					nodes[nodedepth] = append(nodes[nodedepth], childnodepath)
+				}
+			}
+		}
+
+		if len(nodes[nodedepth]) == 0 {
+			fmt.Printf("%s - %d", "nomorenodes", nodedepth)
+			break
+		}
+
+		for _, node := range nodes[nodedepth] {
+			if len(paths) >= n && n != -1 {
+				return
+			}
+			path := filepath.Join(node, file)
+			if _, internalErr := os.Stat(path); !errors.Is(internalErr, os.ErrNotExist) {
+				pathAbsolute, err := filepath.Abs(path)
+				paths = append(paths, pathAbsolute)
+				if err != nil {
+					return paths, err
+				}
+			}
+		}
+	}
+
+	return
+}
+
+func SearchAllFilesDepthFirst() {
+
+}
 
 func DetectContentTypeOfFile(path string) (contenttype string, err error) {
 	file, err := os.Open(path)
@@ -32,7 +101,7 @@ func DetectContentTypeOfFile(path string) (contenttype string, err error) {
 func SearchFileByNameLazy(file string, directory string) (filepaths []string, err error) {
 	filepath.WalkDir(directory, func(path string, dirEntry fs.DirEntry, err error) error {
 		file = filepath.FromSlash(file)
-		if !dirEntry.IsDir() && strings.Split(dirEntry.Name(), ".")[0] == file {
+		if !dirEntry.IsDir() && (strings.Split(dirEntry.Name(), ".")[0] == file || strings.Compare(dirEntry.Name(), file) == 0) {
 			filepaths = append(filepaths, path)
 		}
 		return nil
@@ -43,75 +112,6 @@ func SearchFileByNameLazy(file string, directory string) (filepaths []string, er
 	}
 
 	return
-}
-
-func SearchFileByName(directory string, file string, depth int) (absolutePath string, err error) {
-	absolutePath, err = GetAbsolutePath(filepath.Join(directory, file))
-	if err == nil {
-		return
-	}
-	if depth == 0 {
-		err = os.ErrNotExist
-		return
-	}
-	directories := make([][]string, depth)
-	directories[0] = []string{directory}
-	for index := 0; index < depth; index++ {
-		for _, dir := range directories[index] {
-			absolutePath, childdirectories, err := searchFileByNameInChildDirectories(dir, file)
-			if index < depth-1 {
-				directories[index+1] = append(directories[index+1], childdirectories...)
-			}
-			if err == nil {
-				return absolutePath, nil
-			}
-		}
-	}
-	err = os.ErrNotExist
-	return
-}
-
-func GetAbsolutePath(file string) (absolutePath string, err error) {
-	_, err = os.Stat(file)
-	if !errors.Is(err, os.ErrNotExist) {
-		absolutePath, err = filepath.Abs(file)
-	}
-	return
-}
-
-func GetDirectories(directory string) (directories []string, err error) {
-	dirEntries, err := os.ReadDir(directory)
-	if err != nil {
-		return
-	}
-	for _, dirEntry := range dirEntries {
-		if !dirEntry.IsDir() {
-			continue
-		}
-		info, err := dirEntry.Info()
-		if err != nil {
-			return directories, err
-		}
-		directories = append(directories, filepath.Join(directory, info.Name()))
-	}
-	return directories, nil
-}
-
-func searchFileByNameInChildDirectories(directory string, file string) (absolutePath string, childdirectories []string, err error) {
-	childdirectories, err = GetDirectories(directory)
-	if err != nil {
-		return
-	}
-	for _, childdirectory := range childdirectories {
-		path := filepath.Join(childdirectory, file)
-		absolutePath, err = GetAbsolutePath(path)
-		if err == nil {
-			return
-		}
-	}
-	err = os.ErrNotExist
-	return
-
 }
 
 func WriteToFile(source io.Reader, path string, mkdir bool) (err error) {
