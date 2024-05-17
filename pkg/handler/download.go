@@ -17,16 +17,16 @@ func NewDownloadHandler(parent *Handler) (handler *Downloadhandler) {
 }
 
 func (handler *Downloadhandler) GetDownload(w http.ResponseWriter, req *http.Request) {
-	file, err := filesystem.SearchFileByName(setting.CLIENT_DOWNLOAD_DIRECTORY, setting.CLIENT_DOWNLOAD_FILE, 1)
-	if err != nil {
+	files, err := filesystem.SearchFilesBreadthFirst(setting.CLIENT_DOWNLOAD_DIRECTORY, setting.CLIENT_DOWNLOAD_FILE, 0, 1)
+	if err != nil || len(files) < 1 {
 		log.Error().Err(err).Msg("failed to retrieve lanty client binary data")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = network.ServeFileData(file, w, req)
+	err = network.ServeFileData(files[0], w, req)
 	if err != nil {
-		log.Warn().Err(err).Str("file", file).Msg("failed to serve file / provide meta-info")
+		log.Warn().Err(err).Str("file", files[0]).Msg("failed to serve file / provide meta-info")
 	}
 
 	if req.Method == http.MethodHead {
