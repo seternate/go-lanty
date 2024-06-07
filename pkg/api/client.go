@@ -18,7 +18,7 @@ type Client struct {
 	User *UserService
 }
 
-func NewClient(baseURL *url.URL, timeout time.Duration) (client *Client) {
+func NewClient(baseURL string, timeout time.Duration) (client *Client, err error) {
 	httpclient := &http.Client{
 		Timeout: timeout,
 	}
@@ -28,14 +28,24 @@ func NewClient(baseURL *url.URL, timeout time.Duration) (client *Client) {
 		WithRoutes(router.UserRoutes(nil))
 
 	client = &Client{
-		baseURL:    baseURL,
 		httpclient: httpclient,
 		router:     router,
 	}
-
+	err = client.SetBaseURL(baseURL)
 	client.Game = &GameService{client: client}
 	client.User = &UserService{client: client}
 
+	return
+}
+
+func (c *Client) SetBaseURL(baseURL string) (err error) {
+	u, err := url.Parse(baseURL)
+	if len(u.Host) == 0 || err != nil {
+		u, err = url.Parse("http://" + baseURL)
+	}
+	if err == nil {
+		c.baseURL = u
+	}
 	return
 }
 
