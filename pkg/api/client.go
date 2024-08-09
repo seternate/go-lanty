@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/seternate/go-lanty/pkg/chat"
 	"github.com/seternate/go-lanty/pkg/router"
 )
 
@@ -16,6 +17,7 @@ type Client struct {
 
 	Game *GameService
 	User *UserService
+	Chat *ChatService
 }
 
 func NewClient(baseURL string, timeout time.Duration) (client *Client, err error) {
@@ -25,7 +27,8 @@ func NewClient(baseURL string, timeout time.Duration) (client *Client, err error
 
 	router := router.NewRouter().
 		WithRoutes(router.GameRoutes(nil)).
-		WithRoutes(router.UserRoutes(nil))
+		WithRoutes(router.UserRoutes(nil)).
+		WithRoutes(router.ChatRoutes(nil))
 
 	client = &Client{
 		httpclient: httpclient,
@@ -34,6 +37,10 @@ func NewClient(baseURL string, timeout time.Duration) (client *Client, err error
 	err = client.SetBaseURL(baseURL)
 	client.Game = &GameService{client: client}
 	client.User = &UserService{client: client}
+	client.Chat = &ChatService{
+		client:   client,
+		Messages: make(chan chat.Message, 100),
+	}
 
 	return
 }
@@ -49,8 +56,10 @@ func (c *Client) SetBaseURL(baseURL string) (err error) {
 	return
 }
 
-func (c *Client) BuildURL(url url.URL) url.URL {
-	url.Scheme = "http"
+func (c *Client) buildURL(url url.URL) url.URL {
+	if len(url.Scheme) == 0 {
+		url.Scheme = c.baseURL.Scheme
+	}
 	url.Host = c.baseURL.Host
 	return url
 }

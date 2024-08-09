@@ -25,7 +25,7 @@ func (service *GameService) GetGames() (games []string, err error) {
 	if err != nil {
 		return
 	}
-	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.buildURL(*path), nil, nil)
 	if err != nil {
 		return
 	}
@@ -54,7 +54,7 @@ func (service *GameService) GetGame(slug string) (game game.Game, err error) {
 	if err != nil {
 		return
 	}
-	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.buildURL(*path), nil, nil)
 	if err != nil {
 		return
 	}
@@ -80,7 +80,7 @@ func (service *GameService) GetIcon(game game.Game) (image image.Image, err erro
 		return
 	}
 
-	download, err := network.NewDownload(service.client.BuildURL(*path))
+	download, err := network.NewDownload(service.client.buildURL(*path))
 	if err != nil {
 		return
 	}
@@ -107,7 +107,7 @@ func (service *GameService) Download(ctx context.Context, game game.Game, direct
 		return
 	}
 
-	download, err = network.NewDownload(service.client.BuildURL(*path))
+	download, err = network.NewDownload(service.client.buildURL(*path))
 	if err != nil {
 		return
 	}
