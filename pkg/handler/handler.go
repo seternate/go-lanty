@@ -14,14 +14,12 @@ type Handler struct {
 	Gamehandler     *Gamehandler
 	Userhandler     *Userhandler
 	Downloadhandler *Downloadhandler
+	Chathandler     *ChatHandler
 }
 
 func NewHandler(settings *setting.Settings) *Handler {
 	return &Handler{
-		Setting:         settings,
-		Gamehandler:     nil,
-		Userhandler:     nil,
-		Downloadhandler: nil,
+		Setting: settings,
 	}
 }
 
@@ -42,5 +40,10 @@ func (handler *Handler) WithUserhandler(ctx context.Context, errgrp *errgroup.Gr
 
 func (handler *Handler) WithDownloadHandler() *Handler {
 	handler.Downloadhandler = NewDownloadHandler(handler)
+	return handler
+}
+
+func (handler *Handler) WithChatHandler() *Handler {
+	handler.Chathandler = NewChatHandler(handler)
 	return handler
 }

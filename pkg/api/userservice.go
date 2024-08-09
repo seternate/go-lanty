@@ -18,7 +18,7 @@ func (service *UserService) GetUsers() (users []string, err error) {
 	if err != nil {
 		return
 	}
-	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.buildURL(*path), nil, nil)
 	if err != nil {
 		return
 	}
@@ -43,7 +43,7 @@ func (service *UserService) GetUser(ip string) (user user.User, err error) {
 	if err != nil {
 		return
 	}
-	request, err := service.client.newRESTRequest(http.MethodGet, service.client.BuildURL(*path), nil, nil)
+	request, err := service.client.newRESTRequest(http.MethodGet, service.client.buildURL(*path), nil, nil)
 	if err != nil {
 		return
 	}
@@ -73,7 +73,7 @@ func (service *UserService) CreateNewUser(user user.User) (u user.User, err erro
 	if err != nil {
 		return
 	}
-	request, err := service.client.newRESTRequest(http.MethodPost, service.client.BuildURL(*path), nil, bytes.NewReader(userjson))
+	request, err := service.client.newRESTRequest(http.MethodPost, service.client.buildURL(*path), nil, bytes.NewReader(userjson))
 	if err != nil {
 		return
 	}

@@ -50,16 +50,19 @@ func main() {
 	handler := handler.NewHandler(&settings).
 		WithGamehandler().
 		WithUserhandler(errCtx, errgrp).
-		WithDownloadHandler()
+		WithDownloadHandler().
+		WithChatHandler()
 	log.Trace().Msg("handler created")
 	gameRoutes := router.GameRoutes(handler)
 	userRoutes := router.UserRoutes(handler)
 	downloadRoutes := router.DownloadRoutes(handler)
+	chatRoutes := router.ChatRoutes(handler)
 	log.Trace().Msg("routes created")
 	router := router.NewRouter().
 		WithRoutes(gameRoutes).
 		WithRoutes(userRoutes).
-		WithRoutes(downloadRoutes)
+		WithRoutes(downloadRoutes).
+		WithRoutes(chatRoutes)
 	log.Trace().Msg("router created")
 
 	listener, err := net.Listen("tcp4", ":"+strconv.Itoa(settings.ServerPort))
