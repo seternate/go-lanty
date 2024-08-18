@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 type Download struct {
 	httpclient     *http.Client
 	url            url.URL
+	body           io.ReadCloser
 	filename       string
 	filesize       uint64
 	alreadywritten uint64
@@ -46,13 +48,40 @@ func NewDownload(url url.URL) (download *Download, err error) {
 		return
 	}
 
-	filesize := response.ContentLength
+	download, err = newDownloadFromHeader(response.Header)
+	if err != nil {
+		return
+	}
+
+	download.httpclient = httpclient
+	download.url = url
+
+	return
+}
+
+func NewDownloadFromRaw(header http.Header, body io.ReadCloser) (download *Download, err error) {
+	download, err = newDownloadFromHeader(header)
+	if err != nil {
+		return
+	}
+
+	download.body = body
+
+	return
+}
+
+func newDownloadFromHeader(header http.Header) (download *Download, err error) {
+	filesize, err := strconv.ParseInt(header.Get("Content-Length"), 10, 64)
+	if err != nil {
+		return
+	}
+
 	if filesize < 0 {
 		err = errors.New("missing filesize for download")
 		return
 	}
 
-	contentDisposition := response.Header.Get("Content-Disposition")
+	contentDisposition := header.Get("Content-Disposition")
 	if !strings.HasPrefix(contentDisposition, "attachment") {
 		err = errors.New("no attachment to be downloaded")
 		return
@@ -67,11 +96,9 @@ func NewDownload(url url.URL) (download *Download, err error) {
 	}
 
 	download = &Download{
-		httpclient: httpclient,
-		url:        url,
-		filename:   filename,
-		filesize:   uint64(filesize),
-		Done:       make(chan struct{}),
+		filename: filename,
+		filesize: uint64(filesize),
+		Done:     make(chan struct{}),
 	}
 
 	return
@@ -82,6 +109,23 @@ func (download *Download) StartDownload(ctx context.Context, writer io.Writer) {
 }
 
 func (download *Download) Download(ctx context.Context, writer io.Writer) {
+	download.mutex.RLock()
+	client := download.httpclient
+	url := download.url.String()
+	body := download.body
+	download.mutex.RUnlock()
+	if client != nil && len(url) > 0 {
+		download.downloadFromURL(ctx, writer)
+	} else if body != nil {
+		download.downloadFromBody(ctx, writer)
+	}
+}
+
+func (download *Download) downloadFromBody(ctx context.Context, writer io.Writer) {
+	download.download(ctx, download.body, writer)
+}
+
+func (download *Download) downloadFromURL(ctx context.Context, writer io.Writer) {
 	download.mutex.RLock()
 	client := download.httpclient
 	url := download.url.String()
@@ -107,8 +151,13 @@ func (download *Download) Download(ctx context.Context, writer io.Writer) {
 		return
 	}
 
+	download.download(ctx, response.Body, writer)
+}
+
+func (download *Download) download(ctx context.Context, reader io.ReadCloser, writer io.Writer) {
 	//Buffer of 10MByte
 	buffer := make([]byte, 10*1024*1024)
+	var err error
 	download.mutex.Lock()
 	download.startTime = time.Now()
 	download.mutex.Unlock()
@@ -117,7 +166,7 @@ func (download *Download) Download(ctx context.Context, writer io.Writer) {
 		var read, write int
 
 		if ctx.Err() != nil {
-			response.Body.Close()
+			reader.Close()
 			download.mutex.Lock()
 			download.Err = ctx.Err()
 			download.endTime = time.Now()
@@ -127,11 +176,11 @@ func (download *Download) Download(ctx context.Context, writer io.Writer) {
 			return
 		}
 
-		read, errRead := response.Body.Read(buffer)
+		read, errRead := reader.Read(buffer)
 		if read > 0 {
 			write, err = writer.Write(buffer[0:read])
 			if err != nil {
-				response.Body.Close()
+				reader.Close()
 				download.mutex.Lock()
 				download.Err = err
 				download.endTime = time.Now()
@@ -148,7 +197,7 @@ func (download *Download) Download(ctx context.Context, writer io.Writer) {
 			}
 		}
 		if errRead != nil && errRead != io.EOF {
-			response.Body.Close()
+			reader.Close()
 			download.mutex.Lock()
 			download.Err = errRead
 			download.endTime = time.Now()
@@ -157,7 +206,7 @@ func (download *Download) Download(ctx context.Context, writer io.Writer) {
 			download.notifySubscriber()
 			return
 		} else if errRead != nil && errRead == io.EOF {
-			response.Body.Close()
+			reader.Close()
 			download.mutex.Lock()
 			download.endTime = time.Now()
 			download.mutex.Unlock()

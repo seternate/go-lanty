@@ -17,6 +17,7 @@
 !pkg/
 !pkg/api/
 !pkg/chat/
+!pkg/file/
 !pkg/filesystem/
 !pkg/game/
 !pkg/game/argument/

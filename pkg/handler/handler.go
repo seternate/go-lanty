@@ -15,6 +15,7 @@ type Handler struct {
 	Userhandler     *Userhandler
 	Downloadhandler *Downloadhandler
 	Chathandler     *ChatHandler
+	Filehandler     *Filehandler
 }
 
 func NewHandler(settings *setting.Settings) *Handler {
@@ -45,5 +46,10 @@ func (handler *Handler) WithDownloadHandler() *Handler {
 
 func (handler *Handler) WithChatHandler() *Handler {
 	handler.Chathandler = NewChatHandler(handler)
+	return handler
+}
+
+func (handler *Handler) WithFileHandler() *Handler {
+	handler.Filehandler = NewFileHandler(handler)
 	return handler
 }

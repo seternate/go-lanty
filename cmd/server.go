@@ -51,18 +51,21 @@ func main() {
 		WithGamehandler().
 		WithUserhandler(errCtx, errgrp).
 		WithDownloadHandler().
-		WithChatHandler()
+		WithChatHandler().
+		WithFileHandler()
 	log.Trace().Msg("handler created")
 	gameRoutes := router.GameRoutes(handler)
 	userRoutes := router.UserRoutes(handler)
 	downloadRoutes := router.DownloadRoutes(handler)
 	chatRoutes := router.ChatRoutes(handler)
+	fileRoutes := router.FileRoutes(handler)
 	log.Trace().Msg("routes created")
 	router := router.NewRouter().
 		WithRoutes(gameRoutes).
 		WithRoutes(userRoutes).
 		WithRoutes(downloadRoutes).
-		WithRoutes(chatRoutes)
+		WithRoutes(chatRoutes).
+		WithRoutes(fileRoutes)
 	log.Trace().Msg("router created")
 
 	listener, err := net.Listen("tcp4", ":"+strconv.Itoa(settings.ServerPort))
@@ -116,4 +119,6 @@ func parseServerFlags(settings *setting.Settings) {
 	flag.IntVar(&settings.ServerGracefulShutdown, "graceful-shutdown", 10, "Timeout in seconds to wait for a graceful shutdown of the server")
 	flag.StringVar(&settings.GameConfigDirectory, "game-config-dir", settings.GameConfigDirectory, "Directory of the game configuration files")
 	flag.StringVar(&settings.GameFileDirectory, "game-file-dir", settings.GameFileDirectory, "Directory of the game files")
+	flag.StringVar(&settings.GameIconDirectory, "game-icon-dir", settings.GameIconDirectory, "Directory of the game icons")
+	flag.StringVar(&settings.FileUploadDirectory, "file-upload-dir", settings.FileUploadDirectory, "Directory of files uploaded by clients")
 }

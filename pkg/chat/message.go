@@ -44,6 +44,14 @@ func ReadMessage(r io.Reader) (Message, error) {
 			return nil, err
 		}
 		return textmessage, err
+	case TYPE_FILE:
+		filemessage := &FileMessage{}
+		err = json.Unmarshal(tmpMessageJson, filemessage)
+		if err != nil {
+			return nil, err
+		}
+		return filemessage, err
 	}
+
 	return nil, fmt.Errorf("undefined message type: %s", tmpMessage.Type.String())
 }
