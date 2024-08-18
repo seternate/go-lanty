@@ -10,6 +10,8 @@ func TypeFromString(s string) (Type, error) {
 	switch s {
 	case TYPE_TEXT.slug:
 		return TYPE_TEXT, nil
+	case TYPE_FILE.slug:
+		return TYPE_FILE, nil
 	}
 	return TYPE_UNDEFINED, errors.New("unknown type: " + s)
 }
@@ -17,6 +19,7 @@ func TypeFromString(s string) (Type, error) {
 var (
 	TYPE_UNDEFINED = Type{""}
 	TYPE_TEXT      = Type{"text"}
+	TYPE_FILE      = Type{"file"}
 )
 
 type Type struct {

@@ -2,3 +2,4 @@ serverport: 8080
 game-config-directory: game-config
 game-file-directory: game-data
 game-icon-directory: game-icon
+file-upload-directory: file-upload

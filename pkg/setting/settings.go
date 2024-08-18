@@ -15,6 +15,7 @@ type Settings struct {
 	GameConfigDirectory    string `yaml:"game-config-directory"`
 	GameFileDirectory      string `yaml:"game-file-directory"`
 	GameIconDirectory      string `yaml:"game-icon-directory"`
+	FileUploadDirectory    string `yaml:"file-upload-directory"`
 }
 
 func LoadSettings() (settings Settings, err error) {

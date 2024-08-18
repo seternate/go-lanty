@@ -18,6 +18,7 @@ type Client struct {
 	Game *GameService
 	User *UserService
 	Chat *ChatService
+	File *FileService
 }
 
 func NewClient(baseURL string, timeout time.Duration) (client *Client, err error) {
@@ -28,7 +29,8 @@ func NewClient(baseURL string, timeout time.Duration) (client *Client, err error
 	router := router.NewRouter().
 		WithRoutes(router.GameRoutes(nil)).
 		WithRoutes(router.UserRoutes(nil)).
-		WithRoutes(router.ChatRoutes(nil))
+		WithRoutes(router.ChatRoutes(nil)).
+		WithRoutes(router.FileRoutes(nil))
 
 	client = &Client{
 		httpclient: httpclient,
@@ -41,6 +43,7 @@ func NewClient(baseURL string, timeout time.Duration) (client *Client, err error
 		client:   client,
 		Messages: make(chan chat.Message, 100),
 	}
+	client.File = &FileService{client: client}
 
 	return
 }
