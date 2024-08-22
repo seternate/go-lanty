@@ -10,12 +10,13 @@ const (
 )
 
 type Settings struct {
-	ServerPort             int    `yaml:"serverport"`
-	ServerGracefulShutdown int    `yaml:"-"`
-	GameConfigDirectory    string `yaml:"game-config-directory"`
-	GameFileDirectory      string `yaml:"game-file-directory"`
-	GameIconDirectory      string `yaml:"game-icon-directory"`
-	FileUploadDirectory    string `yaml:"file-upload-directory"`
+	Host                string `yaml:"host"`
+	Port                int    `yaml:"port"`
+	GracefulShutdown    int    `yaml:"-"`
+	GameConfigDirectory string `yaml:"game-config-directory"`
+	GameFileDirectory   string `yaml:"game-file-directory"`
+	GameIconDirectory   string `yaml:"game-icon-directory"`
+	FileUploadDirectory string `yaml:"file-upload-directory"`
 }
 
 func LoadSettings() (settings Settings, err error) {

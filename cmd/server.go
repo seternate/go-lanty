@@ -1,13 +1,18 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"syscall"
@@ -16,9 +21,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/pkg/handler"
 	"github.com/seternate/go-lanty/pkg/logging"
+	"github.com/seternate/go-lanty/pkg/network"
 	"github.com/seternate/go-lanty/pkg/router"
 	"github.com/seternate/go-lanty/pkg/setting"
 	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -36,16 +43,28 @@ func main() {
 	parseServerFlags(&settings)
 	printVersion := flag.Bool("version", false, "Prints the version information")
 	flag.Parse()
+	//Set default for settings.Host - bare LAN IP
+	if len(settings.Host) == 0 {
+		ip, err := network.GetOutboundIP()
+		if err == nil {
+			settings.Host = ip.String()
+		}
+	}
 
 	log.Logger = logging.Configure(logconfig)
+
+	log.Debug().Interface("logconfig", logconfig).Msg("logging configuration")
+	log.Debug().Interface("settings", settings).Msg("settings")
 
 	if *printVersion {
 		fmt.Printf("%s - %s", setting.VERSION, runtime.Version())
 		os.Exit(0)
 	}
 
-	log.Debug().Interface("logconfig", logconfig).Msg("logging configuration")
-	log.Debug().Interface("settings", settings).Msg("settings")
+	err = updateClientServerURL(settings)
+	if err != nil {
+		log.Warn().Err(err).Msg("error during update of client \"settings.yaml\" serverurl")
+	}
 
 	handler := handler.NewHandler(&settings).
 		WithGamehandler().
@@ -68,7 +87,7 @@ func main() {
 		WithRoutes(fileRoutes)
 	log.Trace().Msg("router created")
 
-	listener, err := net.Listen("tcp4", ":"+strconv.Itoa(settings.ServerPort))
+	listener, err := net.Listen("tcp4", ":"+strconv.Itoa(settings.Port))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create listener")
 	}
@@ -86,8 +105,8 @@ func main() {
 	})
 	errgrp.Go(func() error {
 		<-errCtx.Done()
-		log.Info().Msgf("graceful shutdown of http server (%ds)", settings.ServerGracefulShutdown)
-		ctx, ctxCancel := context.WithTimeout(context.Background(), time.Duration(settings.ServerGracefulShutdown)*time.Second)
+		log.Info().Msgf("graceful shutdown of http server (%ds)", settings.GracefulShutdown)
+		ctx, ctxCancel := context.WithTimeout(context.Background(), time.Duration(settings.GracefulShutdown)*time.Second)
 		defer ctxCancel()
 		shutdownErr = httpServer.Shutdown(ctx)
 		return shutdownErr
@@ -115,10 +134,105 @@ func parseConfigFlags(config *logging.Config) {
 }
 
 func parseServerFlags(settings *setting.Settings) {
-	flag.IntVar(&settings.ServerPort, "port", settings.ServerPort, "Port of the http server to listen on")
-	flag.IntVar(&settings.ServerGracefulShutdown, "graceful-shutdown", 10, "Timeout in seconds to wait for a graceful shutdown of the server")
+	flag.StringVar(&settings.Host, "host", settings.Host, "Hostname of the http server")
+	flag.IntVar(&settings.Port, "port", settings.Port, "Port of the http server to listen on")
+	flag.IntVar(&settings.GracefulShutdown, "graceful-shutdown", 10, "Timeout in seconds to wait for a graceful shutdown of the server")
 	flag.StringVar(&settings.GameConfigDirectory, "game-config-dir", settings.GameConfigDirectory, "Directory of the game configuration files")
 	flag.StringVar(&settings.GameFileDirectory, "game-file-dir", settings.GameFileDirectory, "Directory of the game files")
 	flag.StringVar(&settings.GameIconDirectory, "game-icon-dir", settings.GameIconDirectory, "Directory of the game icons")
 	flag.StringVar(&settings.FileUploadDirectory, "file-upload-dir", settings.FileUploadDirectory, "Directory of files uploaded by clients")
+}
+
+func updateClientServerURL(settings setting.Settings) (err error) {
+	path := filepath.Join(setting.CLIENT_DOWNLOAD_DIRECTORY, setting.CLIENT_DOWNLOAD_FILE)
+	readBuffer, err := os.ReadFile(path)
+	if err != nil {
+		err = fmt.Errorf("error reading \"%s\": %w", path, err)
+		return
+	}
+
+	file, err := os.OpenFile(path, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		err = fmt.Errorf("error opening \"%s\": %w", path, err)
+		return
+	}
+	defer file.Close()
+
+	reader := bytes.NewReader(readBuffer)
+	zipReader, err := zip.NewReader(reader, int64(len(readBuffer)))
+	if err != nil {
+		err = fmt.Errorf("error creating zip reader \"%s\": %w", path, err)
+		return
+	}
+
+	writeBuffer := bytes.Buffer{}
+	zipWriter := zip.NewWriter(&writeBuffer)
+
+	for _, zipFile := range zipReader.File {
+		zipFileReader, err := zipFile.Open()
+		if err != nil {
+			err = fmt.Errorf("error opening zip file \"%s\": %w", zipFile.Name, err)
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(zipFile.FileInfo())
+		if err != nil {
+			err = fmt.Errorf("error creating zip file header \"%s\": %w", zipFile.Name, err)
+			return err
+		}
+
+		header.Name = zipFile.Name
+		header.Method = zip.Deflate
+		zipFileWriter, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			err = fmt.Errorf("error creating zip file writer \"%s\": %w", zipFile.Name, err)
+			return err
+		}
+
+		if zipFile.Name == "settings.yaml" {
+			zipFileBuffer, err := io.ReadAll(zipFileReader)
+			if err != nil {
+				err = fmt.Errorf("error reading settings file \"%s\": %w", zipFile.Name, err)
+				return err
+			}
+			tmpSettingsFile := make(map[string]interface{})
+			err = yaml.Unmarshal(zipFileBuffer, tmpSettingsFile)
+			if err != nil {
+				err = fmt.Errorf("error unmarshal settings file \"%s\": %w", zipFile.Name, err)
+				return err
+			}
+			if _, found := tmpSettingsFile["serverurl"]; found {
+				tmpSettingsFile["serverurl"] = fmt.Sprintf("http://%s:%d", settings.Host, settings.Port)
+			} else {
+				err = errors.New("settings file missing \"serverurl\" key")
+				return err
+			}
+			tmpSettingsFileBuffer, err := yaml.Marshal(tmpSettingsFile)
+			if err != nil {
+				err = fmt.Errorf("error marshal settings file \"%s\": %w", zipFile.Name, err)
+				return err
+			}
+			_, err = io.Copy(zipFileWriter, bytes.NewReader(tmpSettingsFileBuffer))
+			if err != nil {
+				err = fmt.Errorf("error writting to settings file buffer \"%s\": %w", zipFile.Name, err)
+				return err
+			}
+		} else {
+			_, err = io.Copy(zipFileWriter, zipFileReader)
+			if err != nil {
+				err = fmt.Errorf("error writting to zip file buffer \"%s\": %w", zipFile.Name, err)
+				return err
+			}
+		}
+		zipFileReader.Close()
+	}
+	err = zipWriter.Close()
+	if err != nil {
+		err = fmt.Errorf("error writting central directory to buffer: %w", err)
+		return
+	}
+
+	_, err = io.Copy(file, &writeBuffer)
+
+	return
 }
