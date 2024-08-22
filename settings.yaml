@@ -1,4 +1,5 @@
-serverport: 8080
+#host: lanty
+port: 8080
 game-config-directory: game-config
 game-file-directory: game-data
 game-icon-directory: game-icon
