@@ -3,7 +3,7 @@ package setting
 import "github.com/seternate/go-lanty/pkg/filesystem"
 
 const (
-	VERSION                   = "0.1.0-beta"
+	VERSION                   = "0.2.0"
 	SETTINGS_PATH             = "settings.yaml"
 	CLIENT_DOWNLOAD_DIRECTORY = "download"
 	CLIENT_DOWNLOAD_FILE      = "lanty.zip"
