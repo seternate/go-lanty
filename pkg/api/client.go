@@ -15,10 +15,11 @@ type Client struct {
 	httpclient *http.Client
 	router     *router.Router
 
-	Game *GameService
-	User *UserService
-	Chat *ChatService
-	File *FileService
+	Health *HealthService
+	Game   *GameService
+	User   *UserService
+	Chat   *ChatService
+	File   *FileService
 }
 
 func NewClient(baseURL string, timeout time.Duration) (client *Client, err error) {
@@ -27,6 +28,7 @@ func NewClient(baseURL string, timeout time.Duration) (client *Client, err error
 	}
 
 	router := router.NewRouter().
+		WithRoutes(router.HealthRoutes(nil)).
 		WithRoutes(router.GameRoutes(nil)).
 		WithRoutes(router.UserRoutes(nil)).
 		WithRoutes(router.ChatRoutes(nil)).
@@ -37,6 +39,7 @@ func NewClient(baseURL string, timeout time.Duration) (client *Client, err error
 		router:     router,
 	}
 	err = client.SetBaseURL(baseURL)
+	client.Health = &HealthService{client: client}
 	client.Game = &GameService{client: client}
 	client.User = &UserService{client: client}
 	client.Chat = &ChatService{
