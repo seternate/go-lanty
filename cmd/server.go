@@ -67,12 +67,14 @@ func main() {
 	}
 
 	handler := handler.NewHandler(&settings).
+		WithHealthHandler().
 		WithGamehandler().
 		WithUserhandler(errCtx, errgrp).
 		WithDownloadHandler().
 		WithChatHandler().
 		WithFileHandler()
 	log.Trace().Msg("handler created")
+	healthRoute := router.HealthRoutes(handler)
 	gameRoutes := router.GameRoutes(handler)
 	userRoutes := router.UserRoutes(handler)
 	downloadRoutes := router.DownloadRoutes(handler)
@@ -80,6 +82,7 @@ func main() {
 	fileRoutes := router.FileRoutes(handler)
 	log.Trace().Msg("routes created")
 	router := router.NewRouter().
+		WithRoutes(healthRoute).
 		WithRoutes(gameRoutes).
 		WithRoutes(userRoutes).
 		WithRoutes(downloadRoutes).

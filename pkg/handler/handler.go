@@ -11,6 +11,7 @@ import (
 
 type Handler struct {
 	Setting         *setting.Settings
+	Healthhandler   *HealthHandler
 	Gamehandler     *Gamehandler
 	Userhandler     *Userhandler
 	Downloadhandler *Downloadhandler
@@ -22,6 +23,11 @@ func NewHandler(settings *setting.Settings) *Handler {
 	return &Handler{
 		Setting: settings,
 	}
+}
+
+func (handler *Handler) WithHealthHandler() *Handler {
+	handler.Healthhandler = NewHealthHandler()
+	return handler
 }
 
 func (handler *Handler) WithGamehandler() *Handler {
