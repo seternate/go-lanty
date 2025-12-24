@@ -3,28 +3,39 @@
 
 # whitelist
 !.gitignore
+!.venomrc
+!docker-compose.yaml
+!Dockerfile
 !go.mod
 !go.sum
+!LICENSE.md
+!Makefile
+!README.md
 !settings.yaml
 
-!*.md
 !*.go
+!.gitkeep
 
 !.github/
 !.github/**/
 !.github/**/*.yaml
 !cmd/
+!cmd/lantyd/
+!database/
+!database/migration/
+!database/migration/*.sql
+!database/testdata/
+!database/testdata/*.sql
+!docs/
+!docs/swagger.yaml
 !pkg/
-!pkg/api/
-!pkg/chat/
-!pkg/file/
-!pkg/filesystem/
-!pkg/game/
-!pkg/game/argument/
-!pkg/handler/
-!pkg/logging/
-!pkg/network/
-!pkg/router/
-!pkg/setting/
-!pkg/user/
-!pkg/util/
+!pkg/**/
+!testdata/
+!testdata/game/
+!testdata/game/blobs/
+!testdata/game/blobs/test_blob.bin
+!testdata/game/icons/
+!testdata/game/icons/game_icon_misc.png
+!tests/
+!tests/**/
+!tests/**/*.yml

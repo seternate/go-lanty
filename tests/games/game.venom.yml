@@ -1,0 +1,177 @@
+name: Game CRUD API Tests
+
+vars:
+  url: http://backend:8080
+  testGameSlug: test-game-venom
+
+testcases:
+# GET /games - List all games
+- name: GET games - List all games
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson ShouldNotBeEmpty
+
+# GET /games/:slug - Get existing game
+- name: GET game by slug - Existing game
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/rune"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.slug ShouldEqual rune
+    - result.bodyjson.name ShouldNotBeEmpty
+
+# GET /games/:slug - Get non-existing game
+- name: GET game by slug - Non-existing game
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/nonexistent-game-slug-12345"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug - Create new game
+- name: PUT game - Create new game
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "slug": "{{.testGameSlug}}",
+        "name": "Test Game from Venom",
+        "executables": [
+          {
+            "role": "default",
+            "path": "/usr/bin/test-game",
+            "requiresadmin": false,
+            "format": "string",
+            "argumentseperator": " ",
+            "args": [
+              {
+                "role": "default",
+                "name": "test-arg",
+                "required": false,
+                "enabled": true,
+                "format": "string",
+                "argument": "--test",
+                "description": "Test argument",
+                "orderindex": 0
+              }
+            ]
+          }
+        ]
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.slug ShouldEqual "{{.testGameSlug}}"
+    - result.bodyjson.name ShouldEqual "Test Game from Venom"
+
+# PUT /games/:slug - Update existing game
+- name: PUT game - Update existing game
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "slug": "{{.testGameSlug}}",
+        "name": "Updated Test Game from Venom",
+        "executables": [
+          {
+            "role": "default",
+            "path": "/usr/bin/test-game-updated",
+            "requiresadmin": true,
+            "format": "string",
+            "argumentseperator": " ",
+            "args": []
+          }
+        ]
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 202
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.slug ShouldEqual "{{.testGameSlug}}"
+    - result.bodyjson.name ShouldEqual "Updated Test Game from Venom"
+
+# PUT /games/:slug - Invalid request (missing name)
+- name: PUT game - Invalid request missing name
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}-invalid"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "slug": "{{.testGameSlug}}-invalid",
+        "executables": []
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# GET /games/:slug - Verify updated game
+- name: GET game - Verify updated game
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.slug ShouldEqual "{{.testGameSlug}}"
+    - result.bodyjson.name ShouldEqual "Updated Test Game from Venom"
+
+# DELETE /games/:slug - Delete game
+- name: DELETE game - Delete existing game
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 204
+    - result.timeseconds ShouldBeLessThan 1
+
+# GET /games/:slug - Verify game deleted
+- name: GET game - Verify game deleted
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+
+# DELETE /games/:slug - Delete non-existing game
+- name: DELETE game - Delete non-existing game
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/games/nonexistent-game-slug-12345"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1

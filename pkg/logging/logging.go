@@ -10,16 +10,29 @@ import (
 )
 
 type Config struct {
-	LogLevel              string
-	ConsoleLoggingEnabled bool
-	FileLoggingEnabled    bool
-	Directory             string
-	Filename              string
-	MaxSize               int
-	MaxBackups            int
-	MaxAge                int
+	//Log level [disable, trace, debug, info, warning, error, panic, fatal]
+	LogLevel string
+
+	//Determines if log files are written
+	FileLoggingEnabled bool
+
+	//Directory to store the log files
+	Directory string
+
+	//File name of the log file
+	Filename string
+
+	//Maximum file size (megabytes) of log file before it will be rotated if logging is enabled
+	MaxSize int
+
+	//Maximum number of old log files to retain
+	MaxBackups int
+
+	//Maximum number of days to retain old log files
+	MaxAge int
 }
 
+// Configures a zerolog.Logger with the given configuration.
 func Configure(config Config) zerolog.Logger {
 	var writers []io.Writer
 
@@ -51,9 +64,7 @@ func Configure(config Config) zerolog.Logger {
 		}
 		writers = append(writers, filelogger)
 	}
-	if config.ConsoleLoggingEnabled {
-		writers = append(writers, os.Stderr)
-	}
+	writers = append(writers, os.Stderr)
 
 	mw := io.MultiWriter(writers...)
 

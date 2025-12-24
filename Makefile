@@ -1,0 +1,150 @@
+.PHONY: help build run test clean fmt vet lint docker-build docker-up docker-down db-up db-down swagger test-e2e test-e2e-all
+
+# Variables
+BINARY_NAME=lantyd
+MAIN_PATH=./cmd/lantyd
+DOCKER_COMPOSE=docker-compose
+GO=go
+
+# Default target
+.DEFAULT_GOAL := help
+
+## help: Show this help message
+help:
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Available targets:'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+## build: Build the Go binary
+build:
+	@echo "Building $(BINARY_NAME)..."
+	$(GO) build -o $(BINARY_NAME) $(MAIN_PATH)
+	@echo "Build complete: $(BINARY_NAME)"
+
+## run: Run the application directly with go run
+run:
+	@echo "Running $(BINARY_NAME)..."
+	$(GO) run $(MAIN_PATH)
+
+## test: Run all tests
+test:
+	@echo "Running tests..."
+	$(GO) test -v ./...
+
+## test-coverage: Run tests with coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	$(GO) test -v -coverprofile=coverage.out ./...
+	$(GO) tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+## fmt: Format Go code
+fmt:
+	@echo "Formatting Go code..."
+	$(GO) fmt ./...
+
+## vet: Run go vet
+vet:
+	@echo "Running go vet..."
+	$(GO) vet ./...
+
+## lint: Run golangci-lint (if available)
+lint:
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Running golangci-lint..."; \
+		golangci-lint run ./...; \
+	else \
+		echo "golangci-lint not found. Install it from https://golangci-lint.run/"; \
+	fi
+
+## swagger: Generate Swagger documentation
+swagger:
+	@echo "Generating Swagger documentation..."
+	@if command -v swag >/dev/null 2>&1; then \
+		cd $(MAIN_PATH) && swag init -d ./ --output ./../../docs --outputTypes go,yaml -pd; \
+		echo "Swagger documentation generated in ./docs"; \
+	else \
+		echo "swag not found. Install it with: go install github.com/swaggo/swag/cmd/swag@latest"; \
+		exit 1; \
+	fi
+
+## clean: Remove build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -f $(BINARY_NAME)
+	rm -f coverage.out coverage.html
+	@echo "Clean complete"
+
+## docker-build: Build the Docker image
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t go-lanty:latest .
+	@echo "Docker build complete"
+
+## docker-up: Start the full docker-compose stack
+docker-up:
+	@echo "Starting docker-compose stack..."
+	$(DOCKER_COMPOSE) up -d
+	@echo "Docker-compose stack started"
+
+## docker-up-build: Start the full docker-compose stack and build images
+docker-up-build:
+	@echo "Building and starting docker-compose stack..."
+	$(DOCKER_COMPOSE) up -d --build
+	@echo "Docker-compose stack built and started"
+
+## docker-down: Stop the docker-compose stack
+docker-down:
+	@echo "Stopping docker-compose stack..."
+	$(DOCKER_COMPOSE) down
+	@echo "Docker-compose stack stopped"
+
+## docker-logs: Show docker-compose logs
+docker-logs:
+	$(DOCKER_COMPOSE) logs -f
+
+## db-up: Start database with migrations
+db-up:
+	@echo "Starting database with migrations..."
+	$(DOCKER_COMPOSE) up -d database
+	@echo "Waiting for database to be healthy..."
+	@$(DOCKER_COMPOSE) up database-migration
+	@echo "Database and migrations are ready"
+
+## db-down: Stop database
+db-down:
+	@echo "Stopping database..."
+	$(DOCKER_COMPOSE) stop database
+	@echo "Database stopped"
+
+## db-reset: Reset database (stop, remove volumes, start with migrations)
+db-reset:
+	@echo "Resetting database..."
+	$(DOCKER_COMPOSE) down -v database database-migration
+	$(DOCKER_COMPOSE) up -d database
+	@echo "Waiting for database to be healthy..."
+	@$(DOCKER_COMPOSE) up database-migration
+	@echo "Database reset complete"
+
+## dev: Start database and run the application locally
+dev: db-up
+	@echo "Starting development environment..."
+	@echo "Database is ready. Starting application..."
+	$(MAKE) run
+
+## test-e2e: Run e2e tests with venom (requires docker-compose)
+test-e2e:
+	@echo "Running e2e tests with venom..."
+	@echo "Make sure backend is running: make docker-up-build"
+	@$(DOCKER_COMPOSE) run --rm test run tests/games/*.venom.yml tests/health.venom.yml
+
+## test-e2e-all: Run all e2e tests including individual test suites
+test-e2e-all:
+	@echo "Running all e2e tests with venom..."
+	@echo "Make sure backend is running: make docker-up-build"
+	@$(DOCKER_COMPOSE) run --rm test run tests/
+
+## all: Build, test, and format
+all: fmt vet test build
+

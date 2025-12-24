@@ -1,0 +1,72 @@
+name: go-lanty
+services:
+
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: lanty
+      POSTGRES_USER: lanty
+      POSTGRES_PASSWORD: lanty
+    ports:
+    - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lanty -d lanty"]
+      interval: 10s
+      timeout: 30s
+      retries: 3
+
+  database-migration:
+    build: ./database/migration
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://lanty:lanty@database:5432/lanty?sslmode=disable
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database-testdata:
+    build: ./database/testdata
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: postgres://lanty:lanty@database:5432/lanty?sslmode=disable
+    profiles:
+    - manual
+    depends_on:
+      database:
+        condition: service_healthy
+      database-migration:
+        condition: service_completed_successfully
+
+  test:
+    image: ovhcom/venom:latest
+    profiles:
+    - manual
+    volumes:
+    - ./tests:/workdir/tests
+    - ./testdata:/workdir/testdata
+    - ./test-results:/workdir/results
+    working_dir: /workdir
+    depends_on:
+      backend:
+        condition: service_started
+
+  unit-test:
+    image: golang:1.25-alpine
+    profiles:
+    - manual
+    command:
+    - go test -v -coverprofile cover.out ./code/...
+    - go tool cover -html cover.out -o cover.html
+    volumes:
+    - ./:$PWD/code
+
+  backend:
+    build: ./
+    command: ["--db", "postgres://lanty:lanty@database:5432/lanty?sslmode=disable", "--loglevel", "debug"]
+    ports:
+    - 8080:8080
+    depends_on:
+      database:
+        condition: service_healthy
+      database-migration:
+        condition: service_completed_successfully

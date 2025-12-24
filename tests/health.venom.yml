@@ -1,0 +1,17 @@
+name: Health Check API Tests
+
+vars:
+  url: http://backend:8080
+
+testcases:
+# GET /health - Health check endpoint
+- name: GET health - Health check
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/health"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+

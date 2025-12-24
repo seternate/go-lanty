@@ -1,0 +1,156 @@
+name: Game Blob API Tests
+
+vars:
+  url: http://backend:8080
+  testGameSlug: test-game-blob-venom
+  testdataDir: /workdir/testdata
+
+testcases:
+# Setup: Create a game first
+- name: Setup - Create game for blob tests
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "slug": "{{.testGameSlug}}",
+        "name": "Test Game for Blob",
+        "executables": []
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldBeGreaterThanOrEqualTo 201
+    - result.statuscode ShouldBeLessThanOrEqualTo 202
+
+# PUT /games/:slug/blob - Upload blob for test game
+- name: Setup - Upload blob for test game
+  steps:
+  - type: exec
+    script: |
+      STATUS=$(curl -X PUT \
+        -H "Content-Type: application/octet-stream" \
+        -H "Content-Digest: sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=" \
+        --data-binary "@{{.testdataDir}}/game/blobs/test_blob.bin" \
+        -w "%{http_code}" \
+        -s \
+        -o /dev/null \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob")
+      echo "$STATUS"
+      [ "$STATUS" -ge 201 ] && [ "$STATUS" -le 202 ]
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring "20"
+
+# GET /games/:slug/blob - Get blob of test game (should exist now)
+- name: GET blob - Test game with blob
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.headers.Content-Length ShouldNotBeEmpty
+    - result.headers.Content-Digest ShouldNotBeEmpty
+
+# PUT /games/:slug/blob - Upload new blob for game that already has a blob (update scenario)
+- name: PUT blob - Update existing blob
+  steps:
+  - type: exec
+    script: |
+      STATUS=$(curl -X PUT \
+        -H "Content-Type: application/octet-stream" \
+        -H "Content-Digest: sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=" \
+        --data-binary "@{{.testdataDir}}/game/blobs/test_blob.bin" \
+        -w "%{http_code}" \
+        -s \
+        -o /dev/null \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob")
+      echo "$STATUS"
+      [ "$STATUS" -eq 202 ]
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldEqual "202"
+
+# GET /games/:slug/blob - Verify updated blob is accessible
+- name: GET blob - Verify updated blob
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.headers.Content-Length ShouldNotBeEmpty
+    - result.headers.Content-Digest ShouldEqual sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=
+
+# GET /games/:slug/blob - Get blob of non-existing game
+- name: GET blob - Non-existing game
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/nonexistent-game-slug-12345/blob"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug/blob - Missing Content-Digest header
+- name: PUT blob - Missing Content-Digest header
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    headers:
+      Content-Type: application/octet-stream
+    body: "test blob data"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug/blob - Invalid Content-Digest format
+- name: PUT blob - Invalid Content-Digest format
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    headers:
+      Content-Type: application/octet-stream
+      Content-Digest: invalid-format
+    body: "test blob data"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug/blob - Non-existing game
+- name: PUT blob - Non-existing game
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/nonexistent-game-slug-12345/blob"
+    headers:
+      Content-Type: application/octet-stream
+      Content-Digest: sha-256=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    body: "test blob data"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+
+# Cleanup: Delete the test game
+- name: Cleanup - Delete test game
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldBeGreaterThanOrEqualTo 200
+    - result.statuscode ShouldBeLessThanOrEqualTo 500

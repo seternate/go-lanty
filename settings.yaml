@@ -1,6 +1,10 @@
 #host: lanty
 port: 8080
-game-config-directory: game-config
-game-file-directory: game-data
-game-icon-directory: game-icon
+# game-config-directory: game-config
+# game-file-directory: game-data
+# game-icon-directory: game-icon
 file-upload-directory: file-upload
+
+game-config-directory: /mnt/data/lan/config
+game-file-directory: /mnt/data/lan/data
+game-icon-directory: /mnt/data/lan/icon
