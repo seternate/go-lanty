@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/pkg/domain/asset"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 )
 
 var _ CommandService = (*commandServiceImpl)(nil)
@@ -42,7 +42,7 @@ func (c *commandServiceImpl) StoreNewAsset(cmd StoreNewAssetCommand) (*asset.Ass
 
 	assetURL, err := url.Parse(cmd.URL)
 	if err != nil {
-		return nil, domainErrors.ValidationErr("asset URL", "failed to parse").WithGot(cmd.URL).WithCause(err)
+		return nil, domainerr.ValidationErr("asset URL", "failed to parse").WithGot(cmd.URL).WithCause(err)
 	}
 
 	var dataReader io.Reader = cmd.Data

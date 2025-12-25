@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	appGameSrv "github.com/seternate/go-lanty/pkg/application/game"
 	domainGame "github.com/seternate/go-lanty/pkg/domain/game"
-	"github.com/seternate/go-lanty/pkg/interface/http/adapter/handler"
 	"github.com/seternate/go-lanty/pkg/interface/http/adapter/header"
+	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
 )
 
 // @Summary Get blob for a Game
@@ -34,12 +34,11 @@ func (ctl *EndpointController) GetBlob(ctx *gin.Context) {
 
 	assetContent, err := ctl.Service.Query.FetchBlob(slug)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 	defer assetContent.Data.Close()
 
-	// Format Content-Digest header
 	digestHeader, err := header.EncodeContentDigestHeader(assetContent.Algorithm, assetContent.Checksum)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to format content-digest header: %w", err))
@@ -100,7 +99,7 @@ func (ctl *EndpointController) PutBlob(ctx *gin.Context) {
 		},
 	)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 

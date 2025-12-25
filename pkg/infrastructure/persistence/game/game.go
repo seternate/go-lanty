@@ -31,7 +31,7 @@ func (row GameRow) Assemble(execrows []GameExecRow, argrows []GameArgRow, assetr
 
 	g, err := game.RehydrateGame(row.Slug, row.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to rehydrate game: %w", err)
+		return nil, fmt.Errorf("failed to rehydrate game (database corruption): %w", err)
 	}
 
 	for _, exec := range execs {
@@ -41,7 +41,7 @@ func (row GameRow) Assemble(execrows []GameExecRow, argrows []GameArgRow, assetr
 	for _, assetrow := range assetrows {
 		asset, err := game.RehydrateGameAsset(assetrow.AssetID, assetrow.Role)
 		if err != nil {
-			return nil, fmt.Errorf("failed to rehydrate game asset for slug=%s: %w", row.Slug, err)
+			return nil, fmt.Errorf("failed to rehydrate game asset for slug=%s (database corruption): %w", row.Slug, err)
 		}
 		g.SetAsset(*asset)
 	}

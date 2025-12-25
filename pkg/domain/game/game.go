@@ -1,10 +1,9 @@
 package game
 
 import (
-	"fmt"
 	"regexp"
 
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 )
 
 type Game struct {
@@ -15,23 +14,37 @@ type Game struct {
 }
 
 func NewGame(slug string, name string) (*Game, error) {
-	return RehydrateGame(slug, name)
+	game, err := hydrateGame(slug, name)
+	if err != nil {
+		return nil, domainerr.InvariantViolationErr("game", slug).WithCause(err)
+	}
+
+	return game, nil
 }
 
 func RehydrateGame(slug string, name string) (*Game, error) {
-	validationErrors := domainErrors.ValidationErrs().WithMessage("failed to validate for game slug=%s", slug)
+	game, err := hydrateGame(slug, name)
+	if err != nil {
+		return nil, domainerr.TrustedInvariantViolationErr("game", slug).WithCause(err)
+	}
+
+	return game, nil
+}
+
+func hydrateGame(slug string, name string) (*Game, error) {
+	validationErrors := domainerr.ValidationErrs()
 
 	err := validationErrors.Wrap(validateSlug(slug))
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate for game slug=%s: %w", slug, err)
+		return nil, err
 	}
 
 	err = validationErrors.Wrap(validateName(name))
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate for game slug=%s: %w", slug, err)
+		return nil, err
 	}
 
-	if len(validationErrors.Errors) > 0 {
+	if validationErrors.HasErrors() {
 		return nil, validationErrors
 	}
 
@@ -44,14 +57,9 @@ func RehydrateGame(slug string, name string) (*Game, error) {
 }
 
 func (game *Game) SetName(name string) error {
-	validationErrors := domainErrors.ValidationErrs().WithMessage("failed to validate for game slug=%s", game.Slug)
-	err := validationErrors.Wrap(validateName(name))
+	err := validateName(name)
 	if err != nil {
-		return fmt.Errorf("failed to validate for game slug=%s: %w", game.Slug, err)
-	}
-
-	if len(validationErrors.Errors) > 0 {
-		return validationErrors
+		return domainerr.InvariantViolationErr("game", game.Slug).WithCause(err)
 	}
 
 	game.Name = name
@@ -74,17 +82,17 @@ func (game *Game) SetAsset(asset GameAsset) *GameAsset {
 var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 func validateSlug(slug string) error {
-	validationErrors := domainErrors.ValidationErrs()
+	validationErrors := domainerr.ValidationErrs()
 
 	if len(slug) == 0 {
-		validationErrors.Wrap(domainErrors.ValidationErr("slug", "can not be empty"))
+		validationErrors.Wrap(domainerr.ValidationErr("slug", "can not be empty"))
 	}
 
 	if !slugRegex.MatchString(slug) {
-		validationErrors.Wrap(domainErrors.ValidationErr("slug", "does not match expected format").WithExpected("pattern=%s", slugRegex.String()).WithGot(slug))
+		validationErrors.Wrap(domainerr.ValidationErr("slug", "does not match expected format").WithExpected("pattern=%s", slugRegex.String()).WithGot(slug))
 	}
 
-	if len(validationErrors.Errors) > 0 {
+	if validationErrors.HasErrors() {
 		return validationErrors
 	}
 
@@ -93,7 +101,7 @@ func validateSlug(slug string) error {
 
 func validateName(name string) error {
 	if len(name) == 0 {
-		return domainErrors.ValidationErr("name", "can not be empty")
+		return domainerr.ValidationErr("name", "can not be empty")
 	}
 
 	return nil

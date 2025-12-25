@@ -26,7 +26,8 @@ func New(controller *controller.HTTPController) *gin.Engine {
 	}
 
 	router := gin.New()
-	//binding.EnableDecoderDisallowUnknownFields = true
+	//TODO: Do we want to enable this?
+	// binding.EnableDecoderDisallowUnknownFields = true
 	router.RedirectTrailingSlash = true
 
 	router.Use(
@@ -36,9 +37,9 @@ func New(controller *controller.HTTPController) *gin.Engine {
 		adapter.Wrap(hlog.RemoteAddrHandler("remote")),
 		adapter.Wrap(hlog.RequestHandler("request")),
 		adapter.Wrap(hlog.ProtoHandler("proto")),
-		middleware.MiddlewareNewlineAppender(),
-		middleware.ErrorHandler,
 		middleware.Logger,
+		middleware.CurlNewlineAppender,
+		middleware.ErrorHandler,
 	)
 
 	addSwaggerRoutes(router)

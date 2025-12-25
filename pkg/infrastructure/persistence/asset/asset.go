@@ -19,7 +19,7 @@ type AssetRow struct {
 func (row AssetRow) Assemble() (*asset.Asset, error) {
 	asset, err := asset.RehydrateAsset(row.ID, row.URL, row.Size, row.Checksum, row.Algorithm, row.MimeType)
 	if err != nil {
-		return nil, fmt.Errorf("failed to rehydrate asset: %w", err)
+		return nil, fmt.Errorf("failed to rehydrate asset (database corruption): %w", err)
 	}
 	return asset, nil
 }

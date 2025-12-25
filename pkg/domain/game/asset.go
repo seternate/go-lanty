@@ -1,11 +1,10 @@
 package game
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 )
 
 type GameAssetRole string
@@ -30,7 +29,7 @@ func ParseGameAssetRole(role string) (GameAssetRole, error) {
 		available = append(available, role.String())
 	}
 
-	return GAME_ASSET_ROLE_UNDEFINED, domainErrors.ValidationErr("game asset role", "undefined").WithExpected(strings.Join(available, ", ")).WithGot(role)
+	return GAME_ASSET_ROLE_UNDEFINED, domainerr.ValidationErr("game asset role", "undefined").WithExpected(strings.Join(available, ", ")).WithGot(role)
 }
 
 func (role GameAssetRole) String() string {
@@ -43,42 +42,44 @@ type GameAsset struct {
 }
 
 func NewGameAsset(assetID uuid.UUID, role string, mimeType string) (*GameAsset, error) {
-	validationErrors := domainErrors.ValidationErrs().WithMessage("failed to validate for asset id=%s role=%s", assetID.String(), role)
+	validationErrors := domainerr.ValidationErrs()
 
-	parsedRole, err := ParseGameAssetRole(role)
+	gameAsset, err := hydrateGameAsset(assetID, role)
 	err = validationErrors.Wrap(err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse for asset id=%s role=%s: %w", assetID.String(), role, err)
+		return nil, err
 	}
 
-	err = validationErrors.Wrap(validateMimeTypeForRole(parsedRole, mimeType))
+	err = validationErrors.Wrap(validateMimeTypeForRole(gameAsset.Role, mimeType))
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate for asset id=%s role=%s: %w", assetID.String(), role, err)
-	}
-
-	gameAsset, err := RehydrateGameAsset(assetID, role)
-	err = validationErrors.Wrap(err)
-	if err != nil {
-		return nil, fmt.Errorf("failed to rehydrate for asset id=%s role=%s: %w", assetID.String(), role, err)
+		return nil, err
 	}
 
 	if len(validationErrors.Errors) > 0 {
-		return nil, validationErrors
+		return nil, domainerr.InvariantViolationErr("game asset", assetID.String()).WithCause(validationErrors)
 	}
 
 	return gameAsset, nil
 }
 
 func RehydrateGameAsset(assetID uuid.UUID, role string) (*GameAsset, error) {
-	validationErrors := domainErrors.ValidationErrs().WithMessage("failed to validate for asset id=%s role=%s", assetID.String(), role)
+	gameAsset, err := hydrateGameAsset(assetID, role)
+	if err != nil {
+		return nil, domainerr.TrustedInvariantViolationErr("game asset", assetID.String()).WithCause(err)
+	}
+	return gameAsset, nil
+}
+
+func hydrateGameAsset(assetID uuid.UUID, role string) (*GameAsset, error) {
+	validationErrors := domainerr.ValidationErrs()
 
 	parsedRole, err := ParseGameAssetRole(role)
 	err = validationErrors.Wrap(err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse for asset id=%s role=%s: %w", assetID.String(), role, err)
+		return nil, err
 	}
 
-	if len(validationErrors.Errors) > 0 {
+	if validationErrors.HasErrors() {
 		return nil, validationErrors
 	}
 
@@ -91,7 +92,7 @@ func RehydrateGameAsset(assetID uuid.UUID, role string) (*GameAsset, error) {
 func validateMimeTypeForRole(role GameAssetRole, mimeType string) error {
 	if role == GAME_ASSET_ROLE_ICON {
 		if !strings.HasPrefix(mimeType, "image/") {
-			return domainErrors.ValidationErr("mime type", "wrong for role=%s", role.String()).WithExpected("image/*").WithGot(mimeType)
+			return domainerr.ValidationErr("mime type", "wrong for role=%s", role.String()).WithExpected("image/*").WithGot(mimeType)
 		}
 	}
 	return nil

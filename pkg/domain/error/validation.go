@@ -1,10 +1,12 @@
-package error
+package domainerr
 
 import (
 	"errors"
 	"fmt"
 	"strings"
 )
+
+var _ Validation = (*ValidationError)(nil)
 
 type ValidationError struct {
 	Field    string
@@ -70,30 +72,26 @@ func (e ValidationError) msg() string {
 	return message
 }
 
+func (e ValidationError) ErrorCode() string {
+	return string(ErrorCodeValidation)
+}
+
 func (ValidationError) DomainError() {}
 func (ValidationError) Validation()  {}
 
+var _ Validation = (*ValidationErrors)(nil)
+
 type ValidationErrors struct {
-	Errors  []*ValidationError
-	Message []string
+	Errors []*ValidationError
 }
 
 func ValidationErrs() *ValidationErrors {
 	return &ValidationErrors{
-		Errors:  make([]*ValidationError, 0),
-		Message: make([]string, 0),
+		Errors: make([]*ValidationError, 0),
 	}
 }
 
-func (e *ValidationErrors) WithMessage(message string, args ...any) *ValidationErrors {
-	msg := fmt.Sprintf(message, args...)
-	if len(msg) > 0 {
-		e.Message = append(e.Message, msg)
-	}
-	return e
-}
-
-func (e *ValidationErrors) Wrap(err error, msg ...string) error {
+func (e *ValidationErrors) Wrap(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -101,38 +99,19 @@ func (e *ValidationErrors) Wrap(err error, msg ...string) error {
 	var ve *ValidationError
 	if errors.As(err, &ve) {
 		e.Errors = append(e.Errors, ve)
-		for _, m := range msg {
-			if len(m) > 0 {
-				e.Message = append(e.Message, m)
-			}
-		}
 		return nil
 	}
 
 	var ves *ValidationErrors
 	if errors.As(err, &ves) {
 		e.Errors = append(e.Errors, ves.Errors...)
-
-		vesMessages := ves.Message
-		if len(vesMessages) > 0 && len(e.Message) > 0 && vesMessages[0] == e.Message[len(e.Message)-1] {
-			vesMessages = vesMessages[1:]
-		}
-		e.Message = append(e.Message, vesMessages...)
-
-		for _, m := range msg {
-			if len(m) > 0 {
-				e.Message = append(e.Message, m)
-			}
-		}
 		return nil
 	}
 
-	return err
+	return fmt.Errorf("expected validation error for wrapping: %w", err)
 }
 
 func (e *ValidationErrors) Error() string {
-	message := strings.Join(e.Message, ": ")
-
 	var errMessages []string
 	for _, err := range e.Errors {
 		errMsg := err.Error()
@@ -141,13 +120,7 @@ func (e *ValidationErrors) Error() string {
 		}
 	}
 
-	if message != "" && len(errMessages) > 0 {
-		message += ": "
-	}
-
-	message += strings.Join(errMessages, ": ")
-
-	return message
+	return strings.Join(errMessages, ": ")
 }
 
 func (e *ValidationErrors) Unwrap() []error {
@@ -164,8 +137,6 @@ func (e *ValidationErrors) Unwrap() []error {
 }
 
 func (e *ValidationErrors) UserError() string {
-	message := strings.Join(e.Message, ": ")
-
 	var errMessages []string
 	for _, err := range e.Errors {
 		errMsg := err.UserError()
@@ -174,13 +145,22 @@ func (e *ValidationErrors) UserError() string {
 		}
 	}
 
-	if message != "" && len(errMessages) > 0 {
-		message += ": "
+	return strings.Join(errMessages, ": ")
+}
+
+func (e *ValidationErrors) HasErrors() bool {
+	return len(e.Errors) > 0
+}
+
+func (e *ValidationErrors) OrNil() error {
+	if e.HasErrors() {
+		return e
 	}
+	return nil
+}
 
-	message += strings.Join(errMessages, ": ")
-
-	return message
+func (e *ValidationErrors) ErrorCode() string {
+	return string(ErrorCodeValidation)
 }
 
 func (e *ValidationErrors) DomainError() {}

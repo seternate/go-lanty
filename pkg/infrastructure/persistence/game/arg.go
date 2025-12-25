@@ -54,7 +54,7 @@ func (row GameArgRow) Assemble() (game.GameArg, error) {
 		FloatPrecision: row.FloatPrecision,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to rehydrate game arg for game exec id=%s: %w", row.GameExecID, err)
+		return nil, fmt.Errorf("failed to rehydrate game arg for game exec id=%s (database corruption): %w", row.GameExecID, err)
 	}
 	return arg, nil
 }

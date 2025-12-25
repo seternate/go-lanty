@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/pkg/application/asset"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 	"github.com/seternate/go-lanty/pkg/domain/game"
 )
 
@@ -79,7 +79,7 @@ func (service *commandServiceImpl) UpsertGame(cmd UpsertGameCommand) (*game.Game
 
 	existingGame, err := service.repository.GetGame(cmd.Slug)
 	if err != nil {
-		var notFound domainErrors.NotFound
+		var notFound domainerr.NotFound
 		if errors.As(err, &notFound) {
 			newGame, err := game.NewGame(cmd.Slug, cmd.Name)
 			if err != nil {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/seternate/go-lanty/pkg/interface/http/adapter/handler"
+	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
 	model "github.com/seternate/go-lanty/pkg/interface/http/model/game"
 )
 
@@ -19,7 +19,7 @@ import (
 func (ctl *EndpointController) GetGames(ctx *gin.Context) {
 	games, err := ctl.Service.Query.GetGames()
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (ctl *EndpointController) GetGame(ctx *gin.Context) {
 
 	game, err := ctl.Service.Query.GetGame(slug)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 
@@ -87,13 +87,13 @@ func (ctl *EndpointController) PutGame(ctx *gin.Context) {
 
 	_, created, err := ctl.Service.Command.UpsertGame(cmd)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 
 	gameView, err := ctl.Service.Query.GetGame(cmd.Slug)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (ctl *EndpointController) DeleteGame(ctx *gin.Context) {
 
 	err := ctl.Service.Command.DeleteGame(slug)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 

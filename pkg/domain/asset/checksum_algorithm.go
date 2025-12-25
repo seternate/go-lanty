@@ -4,7 +4,7 @@ import (
 	"hash"
 	"strings"
 
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 )
 
 type ChecksumAlgorithm string
@@ -38,7 +38,7 @@ func ParseChecksumAlgorithm(algorithm string) (ChecksumAlgorithm, error) {
 		available = append(available, algo.String())
 	}
 
-	return CHECKSUM_ALGORITHM_UNDEFINED, domainErrors.ValidationErr("checksum algorithm", "undefined").WithExpected(strings.Join(available, ", ")).WithGot(algorithm)
+	return CHECKSUM_ALGORITHM_UNDEFINED, domainerr.ValidationErr("checksum algorithm", "undefined").WithExpected(strings.Join(available, ", ")).WithGot(algorithm)
 }
 
 func (algorithm ChecksumAlgorithm) String() string {

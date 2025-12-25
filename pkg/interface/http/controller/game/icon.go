@@ -11,8 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 	appGameSrv "github.com/seternate/go-lanty/pkg/application/game"
 	domainGame "github.com/seternate/go-lanty/pkg/domain/game"
-	"github.com/seternate/go-lanty/pkg/interface/http/adapter/handler"
 	"github.com/seternate/go-lanty/pkg/interface/http/adapter/header"
+	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
 )
 
 // @Summary Get the icon of a Game
@@ -37,12 +37,11 @@ func (ctl *EndpointController) GetIcon(ctx *gin.Context) {
 
 	assetContent, err := ctl.Service.Query.FetchIcon(slug)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 	defer assetContent.Data.Close()
 
-	// Format Content-Digest header
 	digestHeader, err := header.EncodeContentDigestHeader(assetContent.Algorithm, assetContent.Checksum)
 	if err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to format content-digest header: %w", err))
@@ -93,7 +92,6 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 
 	contentTypeHeader := ctx.ContentType()
 	if strings.HasPrefix(contentTypeHeader, "multipart/form-data") {
-		// Handle multipart form data
 		form, err := ctx.MultipartForm()
 		if err != nil {
 			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("failed to parse multipart form: %w", err))
@@ -101,7 +99,6 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 		}
 		defer form.RemoveAll()
 
-		// Count all files across all field names
 		totalFileCount := 0
 		var fileHeader *multipart.FileHeader
 		for _, fileList := range form.File {
@@ -127,7 +124,6 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 		}
 		fileData = file
 	} else {
-		// Handle raw binary data
 		fileData = ctx.Request.Body
 	}
 
@@ -141,7 +137,7 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 		},
 	)
 	if err != nil {
-		handler.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, err)
 		return
 	}
 

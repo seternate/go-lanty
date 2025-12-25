@@ -10,7 +10,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 )
 
 var _ QueryService = (*queryServiceImpl)(nil)
@@ -42,7 +42,7 @@ func (service *queryServiceImpl) GetAsset(id uuid.UUID) (*AssetView, error) {
 	err = service.db.Get(view, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domainErrors.NotFoundErr("asset", id.String()).WithCause(err)
+			return nil, domainerr.NotFoundErr("asset", id.String()).WithCause(err)
 		}
 		return nil, fmt.Errorf("database query failed for assets table for asset id=%s: %s (%v): %w", id.String(), query, args, err)
 	}
@@ -65,7 +65,7 @@ func (service *queryServiceImpl) GetAssetContent(id uuid.UUID) (data io.ReadClos
 	err = service.db.Get(&u, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domainErrors.NotFoundErr("asset", id.String()).WithCause(err)
+			return nil, domainerr.NotFoundErr("asset", id.String()).WithCause(err)
 		}
 		return nil, fmt.Errorf("database query failed for assets table for asset id=%s: %s (%v): %w", id.String(), query, args, err)
 	}

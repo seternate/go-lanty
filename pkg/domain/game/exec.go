@@ -1,11 +1,10 @@
 package game
 
 import (
-	"fmt"
 	"strings"
 	"text/template"
 
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 )
 
 type GameExecRole string
@@ -30,7 +29,7 @@ func ParseGameExecRole(role string) (GameExecRole, error) {
 		available = append(available, role.String())
 	}
 
-	return GAME_EXEC_ROLE_UNDEFINED, domainErrors.ValidationErr("game exec role", "undefined").WithExpected(strings.Join(available, ", ")).WithGot(role)
+	return GAME_EXEC_ROLE_UNDEFINED, domainerr.ValidationErr("game exec role", "undefined").WithExpected(strings.Join(available, ", ")).WithGot(role)
 }
 
 func (role GameExecRole) String() string {
@@ -47,21 +46,35 @@ type GameExec struct {
 }
 
 func NewGameExec(path string, role string, opts ...GameExecOpts) (*GameExec, error) {
-	return RehydrateGameExec(path, role, opts...)
+	gameExec, err := hydrateGameExec(path, role, opts...)
+	if err != nil {
+		return nil, domainerr.InvariantViolationErr("game exec", path).WithCause(err)
+	}
+
+	return gameExec, nil
 }
 
 func RehydrateGameExec(path string, role string, opts ...GameExecOpts) (*GameExec, error) {
-	validationErrors := domainErrors.ValidationErrs().WithMessage("failed to validate for game exec path=%s role=%s", path, role)
+	gameExec, err := hydrateGameExec(path, role, opts...)
+	if err != nil {
+		return nil, domainerr.TrustedInvariantViolationErr("game exec", path).WithCause(err)
+	}
+
+	return gameExec, nil
+}
+
+func hydrateGameExec(path string, role string, opts ...GameExecOpts) (*GameExec, error) {
+	validationErrors := domainerr.ValidationErrs()
 
 	parsedRole, err := ParseGameExecRole(role)
 	err = validationErrors.Wrap(err)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse for game exec path=%s: %w", path, err)
+		return nil, err
 	}
 
 	err = validationErrors.Wrap(validatePath(path))
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate for game exec path=%s role=%s: %w", path, role, err)
+		return nil, err
 	}
 
 	exec := &GameExec{
@@ -69,13 +82,13 @@ func RehydrateGameExec(path string, role string, opts ...GameExecOpts) (*GameExe
 		Path: path,
 	}
 	for _, opt := range opts {
-		err = validationErrors.Wrap(opt(exec), "failed to apply game exec option")
+		err = validationErrors.Wrap(opt(exec))
 		if err != nil {
-			return nil, fmt.Errorf("failed to apply game exec option for path=%s role=%s: %w", path, role, err)
+			return nil, err
 		}
 	}
 
-	if len(validationErrors.Errors) > 0 {
+	if validationErrors.HasErrors() {
 		return nil, validationErrors
 	}
 
@@ -84,7 +97,7 @@ func RehydrateGameExec(path string, role string, opts ...GameExecOpts) (*GameExe
 
 func validatePath(path string) error {
 	if len(path) == 0 {
-		return domainErrors.ValidationErr("path", "can not be empty")
+		return domainerr.ValidationErr("path", "can not be empty")
 	}
 
 	return nil
@@ -94,7 +107,7 @@ func validateUniqueOrderIndexArgs(args []GameArg) error {
 	seen := make(map[int64]string)
 	for _, arg := range args {
 		if duplicate, exists := seen[arg.GetOrderIndex()]; exists {
-			return domainErrors.ValidationErr("arg order index", "must be unique").WithGot("order_index=%d, duplicate_arg_names=%s, %s", arg.GetOrderIndex(), arg.GetName(), duplicate)
+			return domainerr.ValidationErr("arg order index", "must be unique").WithGot("order_index=%d, duplicate_arg_names=%s, %s", arg.GetOrderIndex(), arg.GetName(), duplicate)
 		}
 		seen[arg.GetOrderIndex()] = arg.GetName()
 	}
@@ -120,7 +133,7 @@ func WithFormat(format *string) GameExecOpts {
 			val := *format
 			tmpl, err := template.New("").Parse(val)
 			if err != nil {
-				return domainErrors.ValidationErr("format template", "failed to parse").WithGot(val).WithCause(err)
+				return domainerr.ValidationErr("format template", "failed to parse").WithGot(val).WithCause(err)
 			}
 			exec.Format = tmpl
 		}

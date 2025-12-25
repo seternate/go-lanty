@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 	"github.com/seternate/go-lanty/pkg/domain/game"
 	"github.com/seternate/go-lanty/pkg/infrastructure/database"
 )
@@ -131,7 +131,7 @@ func (repository *gamerepository) fetchGameRow(slug string) (*GameRow, error) {
 	err = repository.db.Get(gamerow, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domainErrors.NotFoundErr("game", slug).WithCause(err)
+			return nil, domainerr.NotFoundErr("game", slug).WithCause(err)
 		}
 		return nil, fmt.Errorf("database query failed for games table for game slug=%s: %s (%v): %w", slug, query, args, err)
 	}
@@ -310,7 +310,7 @@ func saveGameRow(db sq.BaseRunner, gamerow GameRow) error {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == pgerrcode.UniqueViolation {
-				return domainErrors.ConflictErr("game", gamerow.Slug).WithCause(err)
+				return domainerr.ConflictErr("game", gamerow.Slug).WithCause(err)
 			}
 		}
 		return fmt.Errorf("database query failed for games table for game slug=%s: %s (%v): %w", gamerow.Slug, query, args, err)

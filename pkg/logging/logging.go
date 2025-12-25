@@ -32,7 +32,6 @@ type Config struct {
 	MaxAge int
 }
 
-// Configures a zerolog.Logger with the given configuration.
 func Configure(config Config) zerolog.Logger {
 	var writers []io.Writer
 

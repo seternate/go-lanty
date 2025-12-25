@@ -48,7 +48,6 @@ func (adapter *FilesystemStorageAdapter) Save(url url.URL, data io.Reader) (writ
 	}
 
 	dir := filepath.Dir(url.Path)
-	// Always ensure the directory exists, even if it's "." (current directory in base path)
 	err = adapter.fs.MkdirAll(dir, 0755)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create directory for dir=%s: %w", dir, err)

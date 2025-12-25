@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/seternate/go-lanty/pkg/application/asset"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 	"github.com/seternate/go-lanty/pkg/domain/game"
 )
 
@@ -176,7 +176,7 @@ func (service *queryServiceImpl) GetGame(slug string) (*GameView, error) {
 
 	games := assembleGamesView(rows)
 	if len(games) == 0 {
-		return nil, domainErrors.NotFoundErr("game", slug).WithCause(errors.New("UUID ERROR"))
+		return nil, domainerr.NotFoundErr("game", slug)
 	} else if len(games) > 1 {
 		return nil, fmt.Errorf("multiple games found for slug=%s", slug)
 	}
@@ -324,7 +324,7 @@ func (service *queryServiceImpl) FetchIcon(slug string) (*AssetContent, error) {
 	err = service.db.Get(&assetID, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domainErrors.NotFoundErr("game icon", slug).WithCause(err)
+			return nil, domainerr.NotFoundErr("game icon", slug).WithCause(err)
 		}
 		return nil, fmt.Errorf("database query failed for game assets table for slug=%s: %s (%v): %w", slug, query, args, err)
 	}
@@ -363,7 +363,7 @@ func (service *queryServiceImpl) FetchBlob(slug string) (*AssetContent, error) {
 	err = service.db.Get(&assetID, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domainErrors.NotFoundErr("game blob", slug).WithCause(err)
+			return nil, domainerr.NotFoundErr("game blob", slug).WithCause(err)
 		}
 		return nil, fmt.Errorf("database query failed for game assets table for slug=%s: %s (%v): %w", slug, query, args, err)
 	}

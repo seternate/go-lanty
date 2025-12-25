@@ -30,7 +30,7 @@ func (row GameExecRow) Assemble(argrows ...GameArgRow) (*game.GameExec, error) {
 
 	exec, err := game.RehydrateGameExec(row.Path, row.Role, game.WithRequiresAdmin(row.RequiresAdmin), game.WithFormat(row.Format), game.WithArgSeperator(row.ArgSeperator), game.WithArgs(args...))
 	if err != nil {
-		return nil, fmt.Errorf("failed to rehydrate game exec for game slug=%s: %w", row.GameSlug, err)
+		return nil, fmt.Errorf("failed to rehydrate game exec for game slug=%s (database corruption): %w", row.GameSlug, err)
 	}
 	return exec, nil
 }

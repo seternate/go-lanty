@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jmoiron/sqlx"
 	"github.com/seternate/go-lanty/pkg/domain/asset"
-	domainErrors "github.com/seternate/go-lanty/pkg/domain/error"
+	domainerr "github.com/seternate/go-lanty/pkg/domain/error"
 	"github.com/seternate/go-lanty/pkg/infrastructure/database"
 )
 
@@ -42,7 +42,7 @@ func (repository *assetrepository) GetAsset(id uuid.UUID) (*asset.Asset, error) 
 	err = repository.db.Get(assetrow, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domainErrors.NotFoundErr("asset", id.String()).WithCause(err)
+			return nil, domainerr.NotFoundErr("asset", id.String()).WithCause(err)
 		}
 		return nil, fmt.Errorf("database query failed for assets table for asset id=%s: %s (%v): %w", id.String(), query, args, err)
 	}
@@ -72,7 +72,7 @@ func (repository *assetrepository) CreateAsset(a *asset.Asset) error {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == pgerrcode.UniqueViolation {
-				return domainErrors.ConflictErr("asset", a.ID.String()).WithCause(err)
+				return domainerr.ConflictErr("asset", a.ID.String()).WithCause(err)
 			}
 		}
 		return fmt.Errorf("failed to build query for assets table for asset id=%s: %w", a.ID.String(), err)

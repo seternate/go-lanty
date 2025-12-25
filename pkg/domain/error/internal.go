@@ -1,6 +1,8 @@
-package error
+package domainerr
 
 import "fmt"
+
+var _ Internal = (*InternalError)(nil)
 
 type InternalError struct {
 	Reason string
@@ -28,6 +30,10 @@ func (e InternalError) Error() string {
 
 func (e *InternalError) Unwrap() error {
 	return e.Cause
+}
+
+func (e *InternalError) ErrorCode() string {
+	return string(ErrorCodeInternal)
 }
 
 func (InternalError) DomainError() {}

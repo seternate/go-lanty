@@ -1,4 +1,6 @@
-package error
+package domainerr
+
+var _ NotFound = (*NotFoundError)(nil)
 
 type NotFoundError struct {
 	Entity string
@@ -27,6 +29,10 @@ func (e *NotFoundError) Error() string {
 
 func (e *NotFoundError) Unwrap() error {
 	return e.Cause
+}
+
+func (e *NotFoundError) ErrorCode() string {
+	return string(ErrorCodeNotFound)
 }
 
 func (e *NotFoundError) UserError() string {
