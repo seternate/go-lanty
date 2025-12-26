@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	apperr "github.com/seternate/go-lanty/pkg/application/error"
 	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
+	"github.com/seternate/go-lanty/pkg/interface/http/model"
 )
 
 func ErrorHandler(ctx *gin.Context) {
@@ -17,12 +20,37 @@ func ErrorHandler(ctx *gin.Context) {
 		return
 	}
 
-	err := ctx.Errors.Last()
-
-	errDescriptor := apperr.DescribeError(err)
-	if errDescriptor == nil {
+	err := ctx.Errors.Last().Err
+	if err != nil {
 		return
 	}
 
-	ctx.JSON(errorx.HTTPStatusFromError(err), gin.H{"error": *errDescriptor})
+	httpErrDescriptor := errorx.DescribeError(err)
+	if httpErrDescriptor != nil {
+		ctx.JSON(errorx.HTTPStatusFromError(err), model.ErrorResponse{
+			Error: model.ErrorDescriptor{
+				Code:    httpErrDescriptor.Code,
+				Message: httpErrDescriptor.Message,
+			},
+		})
+		return
+	}
+
+	appErrDescriptor := apperr.DescribeError(err)
+	if appErrDescriptor != nil {
+		ctx.JSON(errorx.HTTPStatusFromError(err), model.ErrorResponse{
+			Error: model.ErrorDescriptor{
+				Code:    appErrDescriptor.Code,
+				Message: appErrDescriptor.Message,
+			},
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{
+		Error: model.ErrorDescriptor{
+			Code:    "internal",
+			Message: "Something went wrong unexpectedly. Please try again later.",
+		},
+	})
 }

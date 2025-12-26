@@ -10,38 +10,34 @@ import (
 	domainGame "github.com/seternate/go-lanty/pkg/domain/game"
 	"github.com/seternate/go-lanty/pkg/interface/http/adapter/header"
 	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
+	model "github.com/seternate/go-lanty/pkg/interface/http/model"
 )
 
-// @Summary Get blob for a Game
-// @Description Get the blob for a Game with metadata headers
+var _ = model.ErrorResponse{}
+
+// @Summary Get a Games blob
+// @Description Get the blob for a Game
 // @Tags games
-// @Param slug path string true "Slug of the Game"
-// @Produce application/octet-stream
-// @Success 200 {file} binary "Blob binary data"
-// @Header 200 {string} Content-Length "Size of the blob"
-// @Header 200 {string} Content-Type "MIME type of the blob"
-// @Header 200 {string} Content-Digest "Checksum in RFC 9530 format (algorithm=base64_checksum)"
-// @Failure 400 {object} map[string]string "Bad request: missing slug parameter"
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug}/blob [get]
+// @Param slug path string true "Slug"
+// @Produce application/octet-stream, application/json
+// @Success 200 {file} file "Blob binary data"
+// @Header 200 {string} Content-Digest "Checksum (RFC 9530: algorithm=base64_checksum)"
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /games/{slug}/blob [get]
 func (ctl *EndpointController) GetBlob(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter %q", "slug"))
-		return
-	}
 
 	assetContent, err := ctl.Service.Query.FetchBlob(slug)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to fetch blob: %w", err))
 		return
 	}
 	defer assetContent.Data.Close()
 
 	digestHeader, err := header.EncodeContentDigestHeader(assetContent.Algorithm, assetContent.Checksum)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to format content-digest header: %w", err))
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to encode content-digest header: %w", err))
 		return
 	}
 
@@ -50,42 +46,38 @@ func (ctl *EndpointController) GetBlob(ctx *gin.Context) {
 	})
 }
 
-// @Summary Upsert blob for a Game
-// @Description Creates or updates the blob for a Game. Requires Content-Digest header with checksum. Accepts raw binary data. The Content-Digest header must match the checksum of the uploaded blob data.
+// @Summary Update a Games blob
+// @Description Updates a Games blob.
 // @Tags games
-// @Param slug path string true "Slug of the Game"
-// @Param Content-Digest header string true "Checksum in RFC 9530 format (algorithm=base64_checksum)"
-// @Param request body binary true "Blob binary data"
+// @Param slug path string true "Slug"
+// @Param Content-Digest header string true "Checksum (RFC 9530: algorithm=base64_checksum)"
+// @Param request body string true "Blob binary data"
 // @Accept application/octet-stream
 // @Produce json
-// @Success 201 {object} map[string]string "Blob created"
-// @Success 202 {object} map[string]string "Blob updated"
-// @Failure 400 {object} map[string]string "Bad request: missing slug parameter, missing/invalid Content-Digest header"
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug}/blob [put]
+// @Success 201 "Blob created"
+// @Success 202 "Blob updated"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /games/{slug}/blob [put]
 func (ctl *EndpointController) PutBlob(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter: %s", "slug"))
-		return
-	}
 
 	contentType := ctx.GetHeader("Content-Type")
 	if contentType != "" && strings.HasPrefix(contentType, "multipart/form-data") {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("multipart/form-data is not supported for blob uploads; use raw binary data"))
+		errorx.AbortWithError(ctx, errorx.ErrBadRequest("multipart/form-data is not supported for blob uploads; use raw binary data"))
 		return
 	}
 
 	digestHeader := ctx.GetHeader("Content-Digest")
 	if digestHeader == "" {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing Content-Digest header"))
+		errorx.AbortWithError(ctx, errorx.ErrBadRequest("missing Content-Digest header"))
 		return
 	}
 
 	algorithm, checksum, err := header.DecodeContentDigestHeader(digestHeader)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("invalid Content-Digest header: %w", err))
+		errorx.AbortWithError(ctx, errorx.ErrBadRequest("invalid Content-Digest header").WithCause(err))
 		return
 	}
 
@@ -99,7 +91,7 @@ func (ctl *EndpointController) PutBlob(ctx *gin.Context) {
 		},
 	)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to store new asset: %w", err))
 		return
 	}
 

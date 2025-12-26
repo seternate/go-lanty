@@ -55,7 +55,7 @@ func addSwaggerRoutes(router *gin.Engine) {
 }
 
 func addHealthRoutes(router *gin.Engine) {
-	router.GET("/health", func(ctx *gin.Context) { ctx.Status(http.StatusOK) })
+	router.GET("/health", func(ctx *gin.Context) { ctx.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 }
 
 func addAPIRoutes(r *gin.Engine, controller *controller.HTTPController) {

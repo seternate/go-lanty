@@ -1,10 +1,11 @@
-.PHONY: help build run test clean fmt vet lint docker-build docker-up docker-down db-up db-down swagger test-e2e test-e2e-all
+.PHONY: help build run test clean vet lint docker-build docker-up docker-down db-up db-down swagger test-e2e test-e2e-all
 
 # Variables
 BINARY_NAME=lantyd
 MAIN_PATH=./cmd/lantyd
 DOCKER_COMPOSE=docker-compose
 GO=go
+ARGS?=--db "postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable" --loglevel "debug"
 
 # Default target
 .DEFAULT_GOAL := help
@@ -25,7 +26,7 @@ build:
 ## run: Run the application directly with go run
 run:
 	@echo "Running $(BINARY_NAME)..."
-	$(GO) run $(MAIN_PATH)
+	$(GO) run $(MAIN_PATH) $(ARGS)
 
 ## test: Run all tests
 test:
@@ -39,30 +40,11 @@ test-coverage:
 	$(GO) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
-## fmt: Format Go code
-fmt:
-	@echo "Formatting Go code..."
-	$(GO) fmt ./...
-
-## vet: Run go vet
-vet:
-	@echo "Running go vet..."
-	$(GO) vet ./...
-
-## lint: Run golangci-lint (if available)
-lint:
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		echo "Running golangci-lint..."; \
-		golangci-lint run ./...; \
-	else \
-		echo "golangci-lint not found. Install it from https://golangci-lint.run/"; \
-	fi
-
 ## swagger: Generate Swagger documentation
 swagger:
 	@echo "Generating Swagger documentation..."
 	@if command -v swag >/dev/null 2>&1; then \
-		cd $(MAIN_PATH) && swag init -d ./ --output ./../../docs --outputTypes go,yaml -pd; \
+		swag init -g $(MAIN_PATH)/main.go --outputTypes go,yaml ; \
 		echo "Swagger documentation generated in ./docs"; \
 	else \
 		echo "swag not found. Install it with: go install github.com/swaggo/swag/cmd/swag@latest"; \
@@ -99,10 +81,6 @@ docker-down:
 	@echo "Stopping docker-compose stack..."
 	$(DOCKER_COMPOSE) down
 	@echo "Docker-compose stack stopped"
-
-## docker-logs: Show docker-compose logs
-docker-logs:
-	$(DOCKER_COMPOSE) logs -f
 
 ## db-up: Start database with migrations
 db-up:
@@ -144,7 +122,3 @@ test-e2e-all:
 	@echo "Running all e2e tests with venom..."
 	@echo "Make sure backend is running: make docker-up-build"
 	@$(DOCKER_COMPOSE) run --rm test run tests/
-
-## all: Build, test, and format
-all: fmt vet test build
-

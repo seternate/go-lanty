@@ -1,7 +1,6 @@
 package game
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -13,38 +12,34 @@ import (
 	domainGame "github.com/seternate/go-lanty/pkg/domain/game"
 	"github.com/seternate/go-lanty/pkg/interface/http/adapter/header"
 	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
+	model "github.com/seternate/go-lanty/pkg/interface/http/model"
 )
 
+var _ = model.ErrorResponse{}
+
 // @Summary Get the icon of a Game
-// @Description Get the icon of a Game with metadata headers
+// @Description Get the icon of a Game
 // @Tags games
-// @Param slug path string true "Slug of the Game"
-// @Produce image/*
-// @Success 200 {file} binary "Icon binary data"
-// @Header 200 {string} Content-Length "Size of the icon"
-// @Header 200 {string} Content-Type "MIME type of the icon"
-// @Header 200 {string} Content-Digest "Checksum in RFC 9530 format (algorithm=base64_checksum)"
-// @Failure 400 {object} map[string]string "Bad request: missing slug parameter"
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug}/icon [get]
+// @Param slug path string true "Slug"
+// @Produce image/*, application/json
+// @Success 200 {file} file "Icon binary data"
+// @Header 200 {string} Content-Digest "Checksum (RFC 9530: algorithm=base64_checksum)"
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /games/{slug}/icon [get]
 func (ctl *EndpointController) GetIcon(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter %q", "slug"))
-		return
-	}
 
 	assetContent, err := ctl.Service.Query.FetchIcon(slug)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to fetch icon: %w", err))
 		return
 	}
 	defer assetContent.Data.Close()
 
 	digestHeader, err := header.EncodeContentDigestHeader(assetContent.Algorithm, assetContent.Checksum)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("failed to format content-digest header: %w", err))
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to encode content-digest header: %w", err))
 		return
 	}
 
@@ -53,38 +48,36 @@ func (ctl *EndpointController) GetIcon(ctx *gin.Context) {
 	})
 }
 
-// @Summary Upsert icon for a Game
-// @Description Creates or updates the icon for a Game. Requires Content-Digest header with checksum. Accepts icon data in two formats: 1) Raw binary data, or 2) multipart/form-data with exactly one file. The Content-Digest header must match the checksum of the uploaded file data.
+// @Summary Update a Games icon
+// @Description Updates a Games icon.
+// @Description Accepts icon data in two formats:
+// @Description 1) Raw binary data
+// @Description 2) multipart/form-data with exactly one file. The Content-Digest header must match the checksum of the uploaded file data.
 // @Tags games
-// @Param slug path string true "Slug of the Game"
-// @Param Content-Digest header string true "Checksum in RFC 9530 format (algorithm=base64_checksum)"
+// @Param slug path string true "Slug"
+// @Param Content-Digest header string true "Checksum (RFC 9530: algorithm=base64_checksum)"
+// @Param request body string false "Icon binary data"
 // @Param file formData file false "Icon file (for multipart/form-data uploads). Exactly one file must be provided when using multipart format."
-// @Param request body binary false "Icon binary data (for raw image/* uploads)."
-// @Accept image/*
-// @Accept multipart/form-data
+// @Accept image/*, multipart/form-data
 // @Produce json
-// @Success 201 {object} map[string]string "Icon created"
-// @Success 202 {object} map[string]string "Icon updated"
-// @Failure 400 {object} map[string]string "Bad request: missing/invalid Content-Digest header, no file provided, multiple files provided, or invalid multipart form"
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug}/icon [put]
+// @Success 201 "Icon created"
+// @Success 202 "Icon updated"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /games/{slug}/icon [put]
 func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter: %s", "slug"))
-		return
-	}
 
 	digestHeader := ctx.GetHeader("Content-Digest")
 	if digestHeader == "" {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing Content-Digest header"))
+		errorx.AbortWithError(ctx, errorx.ErrBadRequest("missing Content-Digest header"))
 		return
 	}
 
 	algorithm, checksum, err := header.DecodeContentDigestHeader(digestHeader)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("invalid Content-Digest header: %w", err))
+		errorx.AbortWithError(ctx, errorx.ErrBadRequest("invalid Content-Digest header").WithCause(err))
 		return
 	}
 
@@ -94,7 +87,7 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 	if strings.HasPrefix(contentTypeHeader, "multipart/form-data") {
 		form, err := ctx.MultipartForm()
 		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("failed to parse multipart form: %w", err))
+			errorx.AbortWithError(ctx, errorx.ErrBadRequest("failed to parse multipart form").WithCause(err))
 			return
 		}
 		defer form.RemoveAll()
@@ -109,17 +102,17 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 		}
 
 		if totalFileCount == 0 {
-			ctx.AbortWithError(http.StatusBadRequest, errors.New("no file provided in multipart form"))
+			errorx.AbortWithError(ctx, errorx.ErrBadRequest("no file found in multipart form"))
 			return
 		}
 		if totalFileCount > 1 {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("multiple files provided in multipart form, expected exactly one file, got %d", totalFileCount))
+			errorx.AbortWithError(ctx, errorx.ErrBadRequest("multiple files provided in multipart form, expected exactly one file, got %d", totalFileCount))
 			return
 		}
 
 		file, err := fileHeader.Open()
 		if err != nil {
-			ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("failed to open uploaded file: %w", err))
+			errorx.AbortWithError(ctx, fmt.Errorf("failed to open uploaded file: %w", err))
 			return
 		}
 		fileData = file
@@ -137,7 +130,7 @@ func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 		},
 	)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to store new asset: %w", err))
 		return
 	}
 

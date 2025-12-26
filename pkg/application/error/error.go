@@ -16,21 +16,20 @@ func DescribeError(err error) *ErrorDescriptor {
 		return nil
 	}
 
-	var errDescriptor ErrorDescriptor
-
 	var internalErr domainerr.Internal
 	var userErr domainerr.UserError
 
 	if errors.As(err, &internalErr) {
-		errDescriptor.Message = "Something went wrong. Please try again later."
-		errDescriptor.Code = "internal"
+		return &ErrorDescriptor{
+			Code:    "internal",
+			Message: "Something went wrong. Please try again later.",
+		}
 	} else if errors.As(err, &userErr) {
-		errDescriptor.Message = userErr.UserError()
-		errDescriptor.Code = userErr.ErrorCode()
-	} else {
-		errDescriptor.Message = "Something went wrong unexpectedly. Please try again later."
-		errDescriptor.Code = "internal"
+		return &ErrorDescriptor{
+			Code:    userErr.ErrorCode(),
+			Message: userErr.UserError(),
+		}
 	}
 
-	return &errDescriptor
+	return nil
 }

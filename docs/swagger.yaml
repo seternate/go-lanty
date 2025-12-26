@@ -1,4 +1,501 @@
+definitions:
+  model.ErrorDescriptor:
+    properties:
+      Code:
+        type: string
+      Message:
+        type: string
+    type: object
+  model.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/model.ErrorDescriptor'
+    type: object
+  model.GameExecutableArgResponse:
+    properties:
+      argument:
+        type: string
+      argumentseperator:
+        type: string
+      createdat:
+        type: string
+      defaultbool:
+        type: boolean
+      defaultfloat:
+        type: number
+      defaultint:
+        type: integer
+      defaultstring:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      enumvalues:
+        items:
+          type: string
+        type: array
+      floatprecision:
+        type: integer
+      format:
+        type: string
+      maxfloat:
+        type: number
+      maxint:
+        type: integer
+      minfloat:
+        type: number
+      minint:
+        type: integer
+      orderindex:
+        type: integer
+      required:
+        type: boolean
+      role:
+        type: string
+    type: object
+  model.GameExecutableResponse:
+    properties:
+      args:
+        items:
+          $ref: '#/definitions/model.GameExecutableArgResponse'
+        type: array
+      argumentseperator:
+        type: string
+      createdat:
+        type: string
+      format:
+        type: string
+      path:
+        type: string
+      requiresadmin:
+        type: boolean
+      role:
+        type: string
+    type: object
+  model.GameResponse:
+    properties:
+      createdat:
+        type: string
+      executables:
+        items:
+          $ref: '#/definitions/model.GameExecutableResponse'
+        type: array
+      name:
+        type: string
+      slug:
+        type: string
+    type: object
+  model.UpsertGameExecutableArgRequest:
+    properties:
+      argument:
+        type: string
+      argumentseperator:
+        type: string
+      defaultbool:
+        type: boolean
+      defaultfloat:
+        type: number
+      defaultint:
+        type: integer
+      defaultstring:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      enumvalues:
+        items:
+          type: string
+        type: array
+      floatprecision:
+        type: integer
+      format:
+        type: string
+      maxfloat:
+        type: number
+      maxint:
+        type: integer
+      minfloat:
+        type: number
+      minint:
+        type: integer
+      name:
+        type: string
+      orderindex:
+        type: integer
+      required:
+        type: boolean
+      role:
+        type: string
+    type: object
+  model.UpsertGameExecutableRequest:
+    properties:
+      args:
+        items:
+          $ref: '#/definitions/model.UpsertGameExecutableArgRequest'
+        type: array
+      argumentseperator:
+        type: string
+      format:
+        type: string
+      path:
+        type: string
+      requiresadmin:
+        type: boolean
+      role:
+        type: string
+    type: object
+  model.UpsertGameRequest:
+    properties:
+      executables:
+        items:
+          $ref: '#/definitions/model.UpsertGameExecutableRequest'
+        type: array
+      name:
+        type: string
+    type: object
+externalDocs:
+  description: Documentation
+  url: https://github.com/seternate/go-lanty/blob/main/README.md
 info:
-  contact: {}
-paths: {}
+  contact:
+    email: seternate@gmail.com
+    name: Levin Jeck
+    url: https://github.com/seternate/go-lanty
+  description: Lanty is a platform for managing and serving games for LAN parties
+  license:
+    name: License - MIT
+    url: https://github.com/seternate/go-lanty/blob/main/LICENSE.md
+  title: Lanty
+  version: dev
+paths:
+  /games:
+    get:
+      description: Get a list of all available Games
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.GameResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get list of Games
+      tags:
+      - games
+  /games/{slug}:
+    delete:
+      description: Delete a Game
+      parameters:
+      - description: Slug of the Game
+        in: path
+        name: slug
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a Game
+      tags:
+      - games
+    get:
+      description: Get a Game by its slug
+      parameters:
+      - description: Slug of the Game
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.GameResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a Game
+      tags:
+      - games
+    put:
+      consumes:
+      - application/json
+      description: Update or insert the given Game
+      parameters:
+      - description: Slug of the Game
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Game to update or insert
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertGameRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Game created
+          schema:
+            $ref: '#/definitions/model.GameResponse'
+        "202":
+          description: Game updated
+          schema:
+            $ref: '#/definitions/model.GameResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upsert a Game
+      tags:
+      - games
+  /games/{slug}/blob:
+    get:
+      description: Get the blob for a Game
+      parameters:
+      - description: Slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      - ' application/json'
+      responses:
+        "200":
+          description: Blob binary data
+          headers:
+            Content-Digest:
+              description: 'Checksum (RFC 9530: algorithm=base64_checksum)'
+              type: string
+            Content-Length:
+              description: Blob size
+              type: string
+            Content-Type:
+              description: MIME type
+              type: string
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Get a Games blob
+      tags:
+      - games
+    put:
+      consumes:
+      - application/octet-stream
+      description: Updates a Games blob. Requires Content-Digest header with checksum.
+        Accepts raw binary data. The Content-Digest header must match the checksum
+        of the uploaded blob data.
+      parameters:
+      - description: Slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: 'Checksum (RFC 9530: algorithm=base64_checksum)'
+        in: header
+        name: Content-Digest
+        required: true
+        type: string
+      - description: Blob binary data
+        in: body
+        name: request
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Blob created
+        "202":
+          description: Blob updated
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Update a Games blob
+      tags:
+      - games
+  /games/{slug}/icon:
+    get:
+      description: Get the icon of a Game with metadata headers
+      parameters:
+      - description: Slug of the Game
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - image/*
+      responses:
+        "200":
+          description: Icon binary data
+          headers:
+            Content-Digest:
+              description: Checksum in RFC 9530 format (algorithm=base64_checksum)
+              type: string
+            Content-Length:
+              description: Size of the icon
+              type: string
+            Content-Type:
+              description: MIME type of the icon
+              type: string
+          schema:
+            type: file
+        "400":
+          description: 'Bad request: missing slug parameter'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get the icon of a Game
+      tags:
+      - games
+    put:
+      consumes:
+      - image/*
+      - multipart/form-data
+      description: 'Creates or updates the icon for a Game. Requires Content-Digest
+        header with checksum. Accepts icon data in two formats: 1) Raw binary data,
+        or 2) multipart/form-data with exactly one file. The Content-Digest header
+        must match the checksum of the uploaded file data.'
+      parameters:
+      - description: Slug of the Game
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Checksum in RFC 9530 format (algorithm=base64_checksum)
+        in: header
+        name: Content-Digest
+        required: true
+        type: string
+      - description: Icon file (for multipart/form-data uploads). Exactly one file
+          must be provided when using multipart format.
+        in: formData
+        name: file
+        type: file
+      - description: Icon binary data (for raw image/* uploads).
+        in: body
+        name: request
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Icon created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "202":
+          description: Icon updated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'Bad request: missing/invalid Content-Digest header, no file
+            provided, multiple files provided, or invalid multipart form'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upsert icon for a Game
+      tags:
+      - games
 swagger: "2.0"

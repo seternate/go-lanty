@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
@@ -19,87 +21,66 @@ import (
 	"github.com/seternate/go-lanty/pkg/interface/http/controller"
 	"github.com/seternate/go-lanty/pkg/logging"
 	"github.com/spf13/afero"
-	flag "github.com/spf13/pflag"
 )
-
-//go:generate swag init -d ./ --output ./../../docs --outputTypes go,yaml -pd
 
 var AppVersion = "dev-build"
 var APIVersion = "v1.0.0"
 var BasePath = "/api/v1"
 
-//TODO: change .github folder for build process
-//TODO: change readme
 //TODO: override Version in build with "-ldflags "-X main.Version=1.0.0""
-//TODO: test for integration tests
-//TODO: unit-tests
-//TODO: godocs
 
+// @title Lanty
+// @version dev
+// @description Lanty is a platform for managing and serving games for LAN parties
+// @contact.name Levin Jeck
+// @contact.url https://github.com/seternate/go-lanty
+// @contact.email seternate@gmail.com
+// @license.name License - MIT
+// @license.url https://github.com/seternate/go-lanty/blob/main/LICENSE.md
+// @externalDocs.description Documentation
+// @externalDocs.url https://github.com/seternate/go-lanty/blob/main/README.md
 func main() {
 	//SETUP SIGNAL
 	// signalCtx, cancelSignalCtx := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	// defer cancelSignalCtx()
 	// errgrp, errCtx := errgroup.WithContext(signalCtx)
 
-	//LOAD EXTERNAL CONFIG (APP & DB & SERVER)
-	// config, err := config.Parse(os.Args[1:]...)
-	// dbstring := flag.String("db", "", "[REQUIRED] Connection string to a postgres database (eg. 'postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable') [ENV: LANTY_DB]")
-	// port := flag.IntP("port", "p", 8080, "Port of the server")
-	// loglevel := flag.String("loglevel", "info", "Log level of the application [disable, trace, debug, info, warning, error, panic, fatal]")
-	// printHelp := flag.BoolP("help", "h", false, "Prints help")
-	// printVersion := flag.Bool("version", false, "Prints version information")
-	// flag.Parse()
-
-	//SETUP CLI
-	// flag.Usage = func() {
-	// 	fmt.Printf("Usage: %s [options]\nOptions:\n", os.Args[0])
-	// 	flag.PrintDefaults()
-	// }
-
-	// if len(dbstring) == 0 {
-	// 	log.Fatal().Msg("missing db connection string")
-	// 	flag.Usage()
-	// }
-
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("error parsing/validating configuration")
-	// 	flag.Usage()
-	// 	os.Exit(1)
-	// }
-
-	// if config.PrintHelp {
-	// 	flag.Usage()
-	// 	os.Exit(0)
-	// }
-	// if config.PrintVersion {
-	// 	fmt.Printf("%s - %s", AppVersion, runtime.Version())
-	// 	os.Exit(0)
-	// }
-
-	//SETUP LOGGING
-	executable, err := os.Executable()
+	config, flagset, err := ParseConfig(os.Args...)
 	if err != nil {
-		log.Fatal().Err(err).Msg("error getting application path")
-		flag.Usage()
-		os.Exit(1)
+		if flagset != nil {
+			fmt.Printf("%s\n\n", err)
+			flagset.Usage()
+			os.Exit(1)
+		}
+		log.Fatal().Err(err).Msg("error parsing flagset for configuration")
+	}
+
+	if config.PrintHelp {
+		flagset.Usage()
+		os.Exit(0)
+	}
+	if config.PrintVersion {
+		fmt.Printf("%s - %s\n", AppVersion, runtime.Version())
+		os.Exit(0)
 	}
 
 	log.Logger = logging.Configure(logging.Config{
-		LogLevel:           "trace",
-		FileLoggingEnabled: true,
-		Directory:          filepath.Dir(executable),
+		LogLevel:           config.LogLevel,
+		FileLoggingEnabled: config.EnableFileLogging,
+		Directory:          filepath.Dir(filepath.Dir(os.Args[0])),
 		Filename:           "lanty.log",
-		MaxSize:            10,
-		MaxBackups:         3,
-		MaxAge:             0,
+		MaxSize:            config.LogFileSize,
+		MaxBackups:         config.LogBackups,
+		MaxAge:             config.LogAge,
 	})
 
-	//CREATE APPLICATION <- app-config & db-config
-	db, err := database.New("postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable")
+	db, err := database.New(config.DBString)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 	defer db.Close()
+
+	//TODO: FINISH SETUP
 
 	persistance := persistence.NewRepositories(db)
 
@@ -141,11 +122,18 @@ func main() {
 		appgamecommandservice,
 	)
 
-	//START SERVER <- server-config
 	controller := controller.New(appgameservice)
 	engine := router.New(controller)
-	swagger.InitInfo("v1.0.0", router.APIBasePath, 8080)
-	server.Init(engine).Run(8080)
+	swagger.InitInfo(APIVersion, config.Host, config.Port, router.APIBasePath, []string{config.Scheme})
+	if config.Scheme == "http" {
+		err = server.Init(engine).Run(config.Port)
+		if err != nil {
+			log.Fatal().Err(err).Msg("unexpected error running the http server")
+		}
+		os.Exit(0)
+	}
+
+	log.Fatal().Msgf("can not run server with scheme: %s", config.Scheme)
 
 	//Setup database connection
 	// db, err := sqlx.Connect("pgx", config.DBString)

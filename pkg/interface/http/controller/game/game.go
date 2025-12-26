@@ -6,20 +6,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 	errorx "github.com/seternate/go-lanty/pkg/interface/http/error"
+	errmodel "github.com/seternate/go-lanty/pkg/interface/http/model"
 	model "github.com/seternate/go-lanty/pkg/interface/http/model/game"
 )
 
-// @Summary Get list of Games
-// @Description Get a list of all available Games
+var _ = errmodel.ErrorResponse{}
+
+// @Summary Get all Games
+// @Description Get all available Games
 // @Tags games
 // @Produce json
-// @Success 200 {array} model.GameResponse
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games [get]
+// @Success 200 {array} errmodel.GameResponse
+// @Failure 500 {object} errmodel.ErrorResponse
+// @Router /games [get]
 func (ctl *EndpointController) GetGames(ctx *gin.Context) {
 	games, err := ctl.Service.Query.GetGames()
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to get games: %w", err))
 		return
 	}
 
@@ -34,66 +37,55 @@ func (ctl *EndpointController) GetGames(ctx *gin.Context) {
 // @Summary Get a Game
 // @Description Get a Game by its slug
 // @Tags games
-// @Param slug path string true "Slug of the Game"
+// @Param slug path string true "Slug"
 // @Produce json
 // @Success 200 {object} model.GameResponse
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug} [get]
+// @Failure 404 {object} errmodel.ErrorResponse
+// @Failure 500 {object} errmodel.ErrorResponse
+// @Router /games/{slug} [get]
 func (ctl *EndpointController) GetGame(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter: %s", "slug"))
-		return
-	}
 
 	game, err := ctl.Service.Query.GetGame(slug)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to get game: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, model.NewGameResponse(game))
 }
 
-// @Summary Upsert a Game
-// @Description Update or insert the given Game
+// @Summary Create or update a Game
+// @Description Create or update the given Game.
 // @Tags games
-// @Param slug path string true "Slug of the Game"
-// @Param request body model.UpsertGameRequest true "Game to update or insert"
+// @Param slug path string true "Slug"
+// @Param request body model.UpsertGameRequest true "Game to create or update"
 // @Accept json
 // @Produce json
 // @Success 201 {object} model.GameResponse "Game created"
 // @Success 202 {object} model.GameResponse "Game updated"
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug} [put]
+// @Failure 400 {object} errmodel.ErrorResponse
+// @Failure 500 {object} errmodel.ErrorResponse
+// @Router /games/{slug} [put]
 func (ctl *EndpointController) PutGame(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter %q", "slug"))
-		return
-	}
 
 	upsertRequest := &model.UpsertGameRequest{}
 	err := ctx.BindJSON(upsertRequest)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		errorx.AbortWithError(ctx, errorx.ErrBadRequest("failed to read request body").WithCause(err))
 		return
 	}
 
-	cmd := upsertRequest.ToCommand(slug)
-
-	_, created, err := ctl.Service.Command.UpsertGame(cmd)
+	_, created, err := ctl.Service.Command.UpsertGame(upsertRequest.ToCommand(slug))
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to upsert game: %w", err))
 		return
 	}
 
-	gameView, err := ctl.Service.Query.GetGame(cmd.Slug)
+	gameView, err := ctl.Service.Query.GetGame(slug)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to get game: %w", err))
 		return
 	}
 
@@ -108,22 +100,17 @@ func (ctl *EndpointController) PutGame(ctx *gin.Context) {
 // @Summary Delete a Game
 // @Description Delete a Game
 // @Tags games
-// @Param slug path string true "Slug of the Game"
+// @Param slug path string true "Slug"
 // @Success 204 "No Content"
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /api/v1/games/{slug} [delete]
+// @Failure 404 {object} errmodel.ErrorResponse
+// @Failure 500 {object} errmodel.ErrorResponse
+// @Router /games/{slug} [delete]
 func (ctl *EndpointController) DeleteGame(ctx *gin.Context) {
 	slug := ctx.Param("slug")
-	if len(slug) == 0 {
-		ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing mandatory parameter %q", "slug"))
-		return
-	}
 
 	err := ctl.Service.Command.DeleteGame(slug)
 	if err != nil {
-		errorx.AbortWithError(ctx, err)
+		errorx.AbortWithError(ctx, fmt.Errorf("failed to delete game: %w", err))
 		return
 	}
 

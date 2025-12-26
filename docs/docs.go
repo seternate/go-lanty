@@ -9,22 +9,755 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "Levin Jeck",
+            "url": "https://github.com/seternate/go-lanty",
+            "email": "seternate@gmail.com"
+        },
+        "license": {
+            "name": "License - MIT",
+            "url": "https://github.com/seternate/go-lanty/blob/main/LICENSE.md"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/games": {
+            "get": {
+                "description": "Get a list of all available Games",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Get list of Games",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.GameResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{slug}": {
+            "get": {
+                "description": "Get a Game by its slug",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Get a Game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the Game",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.GameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update or insert the given Game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Upsert a Game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the Game",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Game to update or insert",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpsertGameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Game created",
+                        "schema": {
+                            "$ref": "#/definitions/model.GameResponse"
+                        }
+                    },
+                    "202": {
+                        "description": "Game updated",
+                        "schema": {
+                            "$ref": "#/definitions/model.GameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a Game",
+                "tags": [
+                    "games"
+                ],
+                "summary": "Delete a Game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the Game",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{slug}/blob": {
+            "get": {
+                "description": "Get the blob for a Game",
+                "produces": [
+                    "application/octet-stream",
+                    " application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Get a Games blob",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Blob binary data",
+                        "schema": {
+                            "type": "file"
+                        },
+                        "headers": {
+                            "Content-Digest": {
+                                "type": "string",
+                                "description": "Checksum (RFC 9530: algorithm=base64_checksum)"
+                            },
+                            "Content-Length": {
+                                "type": "string",
+                                "description": "Blob size"
+                            },
+                            "Content-Type": {
+                                "type": "string",
+                                "description": "MIME type"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates a Games blob. Requires Content-Digest header with checksum. Accepts raw binary data. The Content-Digest header must match the checksum of the uploaded blob data.",
+                "consumes": [
+                    "application/octet-stream"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Update a Games blob",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Checksum (RFC 9530: algorithm=base64_checksum)",
+                        "name": "Content-Digest",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Blob binary data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Blob created"
+                    },
+                    "202": {
+                        "description": "Blob updated"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/games/{slug}/icon": {
+            "get": {
+                "description": "Get the icon of a Game with metadata headers",
+                "produces": [
+                    "image/*"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Get the icon of a Game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the Game",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Icon binary data",
+                        "schema": {
+                            "type": "file"
+                        },
+                        "headers": {
+                            "Content-Digest": {
+                                "type": "string",
+                                "description": "Checksum in RFC 9530 format (algorithm=base64_checksum)"
+                            },
+                            "Content-Length": {
+                                "type": "string",
+                                "description": "Size of the icon"
+                            },
+                            "Content-Type": {
+                                "type": "string",
+                                "description": "MIME type of the icon"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request: missing slug parameter",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Creates or updates the icon for a Game. Requires Content-Digest header with checksum. Accepts icon data in two formats: 1) Raw binary data, or 2) multipart/form-data with exactly one file. The Content-Digest header must match the checksum of the uploaded file data.",
+                "consumes": [
+                    "image/*",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "games"
+                ],
+                "summary": "Upsert icon for a Game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the Game",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Checksum in RFC 9530 format (algorithm=base64_checksum)",
+                        "name": "Content-Digest",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Icon file (for multipart/form-data uploads). Exactly one file must be provided when using multipart format.",
+                        "name": "file",
+                        "in": "formData"
+                    },
+                    {
+                        "description": "Icon binary data (for raw image/* uploads).",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Icon created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "Icon updated",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request: missing/invalid Content-Digest header, no file provided, multiple files provided, or invalid multipart form",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.ErrorDescriptor": {
+            "type": "object",
+            "properties": {
+                "Code": {
+                    "type": "string"
+                },
+                "Message": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/model.ErrorDescriptor"
+                }
+            }
+        },
+        "model.GameExecutableArgResponse": {
+            "type": "object",
+            "properties": {
+                "argument": {
+                    "type": "string"
+                },
+                "argumentseperator": {
+                    "type": "string"
+                },
+                "createdat": {
+                    "type": "string"
+                },
+                "defaultbool": {
+                    "type": "boolean"
+                },
+                "defaultfloat": {
+                    "type": "number"
+                },
+                "defaultint": {
+                    "type": "integer"
+                },
+                "defaultstring": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "enumvalues": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "floatprecision": {
+                    "type": "integer"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "maxfloat": {
+                    "type": "number"
+                },
+                "maxint": {
+                    "type": "integer"
+                },
+                "minfloat": {
+                    "type": "number"
+                },
+                "minint": {
+                    "type": "integer"
+                },
+                "orderindex": {
+                    "type": "integer"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.GameExecutableResponse": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GameExecutableArgResponse"
+                    }
+                },
+                "argumentseperator": {
+                    "type": "string"
+                },
+                "createdat": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "requiresadmin": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.GameResponse": {
+            "type": "object",
+            "properties": {
+                "createdat": {
+                    "type": "string"
+                },
+                "executables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.GameExecutableResponse"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpsertGameExecutableArgRequest": {
+            "type": "object",
+            "properties": {
+                "argument": {
+                    "type": "string"
+                },
+                "argumentseperator": {
+                    "type": "string"
+                },
+                "defaultbool": {
+                    "type": "boolean"
+                },
+                "defaultfloat": {
+                    "type": "number"
+                },
+                "defaultint": {
+                    "type": "integer"
+                },
+                "defaultstring": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "enumvalues": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "floatprecision": {
+                    "type": "integer"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "maxfloat": {
+                    "type": "number"
+                },
+                "maxint": {
+                    "type": "integer"
+                },
+                "minfloat": {
+                    "type": "number"
+                },
+                "minint": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orderindex": {
+                    "type": "integer"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpsertGameExecutableRequest": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UpsertGameExecutableArgRequest"
+                    }
+                },
+                "argumentseperator": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "requiresadmin": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpsertGameRequest": {
+            "type": "object",
+            "properties": {
+                "executables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UpsertGameExecutableRequest"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "externalDocs": {
+        "description": "Documentation",
+        "url": "https://github.com/seternate/go-lanty/blob/main/README.md"
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "dev",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Lanty",
+	Description:      "Lanty is a platform for managing and serving games for LAN parties",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
