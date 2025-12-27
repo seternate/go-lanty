@@ -34,7 +34,7 @@
 !testdata/game/blobs/
 !testdata/game/blobs/test_blob.bin
 !testdata/game/icons/
-!testdata/game/icons/game_icon_misc.png
+!testdata/game/icons/test_game_icon.png
 !tests/
 !tests/**/
 !tests/**/*.yml

@@ -6,6 +6,7 @@ MAIN_PATH=./cmd/lantyd
 DOCKER_COMPOSE=docker-compose
 GO=go
 ARGS?=--db "postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable" --loglevel "debug"
+APP_VERSION?=dev-build
 
 # Default target
 .DEFAULT_GOAL := help
@@ -17,28 +18,34 @@ help:
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-## build: Build the Go binary
 build:
 	@echo "Building $(BINARY_NAME)..."
-	$(GO) build -o $(BINARY_NAME) $(MAIN_PATH)
+	$(GO) build -o $(BINARY_NAME) -ldflags "-X main.AppVersion=$(APP_VERSION)" $(MAIN_PATH)
 	@echo "Build complete: $(BINARY_NAME)"
 
-## run: Run the application directly with go run
 run:
 	@echo "Running $(BINARY_NAME)..."
 	$(GO) run $(MAIN_PATH) $(ARGS)
 
-## test: Run all tests
 test:
 	@echo "Running tests..."
 	$(GO) test -v ./...
 
-## test-coverage: Run tests with coverage
 test-coverage:
 	@echo "Running tests with coverage..."
 	$(GO) test -v -coverprofile=coverage.out ./...
 	$(GO) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+
+test-e2e:
+	@echo "Running e2e tests with venom..."
+	@echo "Make sure backend is running: make docker-up-build"
+	@$(DOCKER_COMPOSE) run --rm test run tests/games/*.venom.yml tests/health.venom.yml
+
+test-e2e-all:
+	@echo "Running all e2e tests with venom..."
+	@echo "Make sure backend is running: make docker-up-build"
+	@$(DOCKER_COMPOSE) run --rm test run tests/
 
 ## swagger: Generate Swagger documentation
 swagger:
@@ -111,14 +118,4 @@ dev: db-up
 	@echo "Database is ready. Starting application..."
 	$(MAKE) run
 
-## test-e2e: Run e2e tests with venom (requires docker-compose)
-test-e2e:
-	@echo "Running e2e tests with venom..."
-	@echo "Make sure backend is running: make docker-up-build"
-	@$(DOCKER_COMPOSE) run --rm test run tests/games/*.venom.yml tests/health.venom.yml
 
-## test-e2e-all: Run all e2e tests including individual test suites
-test-e2e-all:
-	@echo "Running all e2e tests with venom..."
-	@echo "Make sure backend is running: make docker-up-build"
-	@$(DOCKER_COMPOSE) run --rm test run tests/

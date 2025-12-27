@@ -34,7 +34,7 @@ testcases:
     headers:
       Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=
     multipart_form:
-      file: "@{{.testdataDir}}/game/icons/game_icon_misc.png"
+      file: "@{{.testdataDir}}/game/icons/test_game_icon.png"
     timeout: 5
     assertions:
     - result.statuscode ShouldBeGreaterThanOrEqualTo 201
@@ -62,7 +62,7 @@ testcases:
     headers:
       Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=
     multipart_form:
-      file: "@{{.testdataDir}}/game/icons/game_icon_misc.png"
+      file: "@{{.testdataDir}}/game/icons/test_game_icon.png"
     timeout: 5
     assertions:
     - result.statuscode ShouldEqual 202
@@ -145,7 +145,7 @@ testcases:
       curl -X PUT \
         -H "Content-Type: image/png" \
         -H "Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=" \
-        --data-binary "@../../{{.testdataDir}}/game/icons/game_icon_misc.png" \
+        --data-binary "@../../{{.testdataDir}}/game/icons/test_game_icon.png" \
         -w "\n%{http_code}" \
         -s \
         "{{.url}}/api/v1/games/{{.testGameSlug}}/icon"
