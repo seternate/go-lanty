@@ -29,13 +29,14 @@ run:
 
 test:
 	@echo "Running tests..."
-	$(GO) test -v ./...
+	$(GO) test ./...
 
 test-coverage:
 	@echo "Running tests with coverage..."
-	$(GO) test -v -coverprofile=coverage.out ./...
+	$(GO) test -coverprofile=coverage.out ./...
 	$(GO) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
+	$(GO) tool cover -func=coverage.out
 
 test-e2e:
 	@echo "Running e2e tests with venom..."

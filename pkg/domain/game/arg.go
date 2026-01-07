@@ -136,6 +136,9 @@ func hydrateGameArg(input GameArgInput) (GameArg, error) {
 		if err != nil {
 			return nil, err
 		}
+		if validationErrors.HasErrors() {
+			return nil, validationErrors
+		}
 		arg = &GameArgString{
 			GameArgFlag: base,
 			Default:     *input.DefaultString,
@@ -145,6 +148,9 @@ func hydrateGameArg(input GameArgInput) (GameArg, error) {
 		if err != nil {
 			return nil, err
 		}
+		if validationErrors.HasErrors() {
+			return nil, validationErrors
+		}
 		arg = &GameArgBool{
 			GameArgFlag: base,
 			Default:     *input.DefaultBool,
@@ -153,6 +159,9 @@ func hydrateGameArg(input GameArgInput) (GameArg, error) {
 		err = validationErrors.Wrap(validateEnumArg(input))
 		if err != nil {
 			return nil, err
+		}
+		if validationErrors.HasErrors() {
+			return nil, validationErrors
 		}
 		arg = &GameArgEnum{
 			GameArgFlag: base,
@@ -164,6 +173,9 @@ func hydrateGameArg(input GameArgInput) (GameArg, error) {
 		if err != nil {
 			return nil, err
 		}
+		if validationErrors.HasErrors() {
+			return nil, validationErrors
+		}
 		arg = &GameArgInt{
 			GameArgFlag: base,
 			Default:     *input.DefaultInt,
@@ -174,6 +186,9 @@ func hydrateGameArg(input GameArgInput) (GameArg, error) {
 		err = validationErrors.Wrap(validateFloatArg(input))
 		if err != nil {
 			return nil, err
+		}
+		if validationErrors.HasErrors() {
+			return nil, validationErrors
 		}
 		arg = &GameArgFloat{
 			GameArgFlag:    base,
@@ -318,9 +333,8 @@ func validateEnumArg(input GameArgInput) error {
 		validationErrors.Wrap(domainerr.ValidationErr("enum values", "must be provided"))
 	}
 
-	if !slices.Contains(input.Enums, *input.DefaultString) {
+	if input.DefaultString != nil && len(*input.DefaultString) > 0 && !slices.Contains(input.Enums, *input.DefaultString) {
 		validationErrors.Wrap(domainerr.ValidationErr("default", "must be part of values").WithExpected(strings.Join(input.Enums, ", ")).WithGot(*input.DefaultString))
-
 	}
 
 	return validationErrors.OrNil()
@@ -344,11 +358,11 @@ func validateIntArg(input GameArgInput) error {
 		validationErrors.Wrap(domainerr.ValidationErr("min value", "cannot be greater than max value").WithExpected("less than or equal to %d", *input.MaxInt).WithGot("%d", *input.MinInt))
 	}
 
-	if *input.DefaultInt < *input.MinInt {
+	if input.DefaultInt != nil && input.MinInt != nil && *input.DefaultInt < *input.MinInt {
 		validationErrors.Wrap(domainerr.ValidationErr("default", "can not be less than min value").WithExpected("more than or equal to %d", *input.MinInt).WithGot("%d", *input.DefaultInt))
 	}
 
-	if *input.DefaultInt > *input.MaxInt {
+	if input.DefaultInt != nil && input.MaxInt != nil && *input.DefaultInt > *input.MaxInt {
 		validationErrors.Wrap(domainerr.ValidationErr("default", "can not be greater than max value").WithExpected("less than or equal to %d", *input.MaxInt).WithGot("%d", *input.DefaultInt))
 	}
 
@@ -377,11 +391,11 @@ func validateFloatArg(input GameArgInput) error {
 		validationErrors.Wrap(domainerr.ValidationErr("float precision", "can not be empty"))
 	}
 
-	if *input.DefaultFloat < *input.MinFloat {
+	if input.DefaultFloat != nil && input.MinFloat != nil && *input.DefaultFloat < *input.MinFloat {
 		validationErrors.Wrap(domainerr.ValidationErr("default", "can not be less than min value").WithExpected("more than or equal to %f", *input.MinFloat).WithGot("%f", *input.DefaultFloat))
 	}
 
-	if *input.DefaultFloat > *input.MaxFloat {
+	if input.DefaultFloat != nil && input.MaxFloat != nil && *input.DefaultFloat > *input.MaxFloat {
 		validationErrors.Wrap(domainerr.ValidationErr("default", "can not be greater than max value").WithExpected("less than or equal to %f", *input.MaxFloat).WithGot("%f", *input.DefaultFloat))
 	}
 

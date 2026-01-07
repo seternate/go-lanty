@@ -77,6 +77,10 @@ func hydrateGameExec(path string, role string, opts ...GameExecOpts) (*GameExec,
 		return nil, err
 	}
 
+	if validationErrors.HasErrors() {
+		return nil, validationErrors
+	}
+
 	exec := &GameExec{
 		Role: parsedRole,
 		Path: path,

@@ -49,13 +49,16 @@ func NewGameAsset(assetID uuid.UUID, role string, mimeType string) (*GameAsset, 
 	if err != nil {
 		return nil, err
 	}
+	if validationErrors.HasErrors() {
+		return nil, domainerr.InvariantViolationErr("game asset", assetID.String()).WithCause(validationErrors)
+	}
 
 	err = validationErrors.Wrap(validateMimeTypeForRole(gameAsset.Role, mimeType))
 	if err != nil {
 		return nil, err
 	}
 
-	if len(validationErrors.Errors) > 0 {
+	if validationErrors.HasErrors() {
 		return nil, domainerr.InvariantViolationErr("game asset", assetID.String()).WithCause(validationErrors)
 	}
 
