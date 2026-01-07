@@ -96,15 +96,17 @@ func (e *ValidationErrors) Wrap(err error) error {
 		return nil
 	}
 
-	var ve *ValidationError
-	if errors.As(err, &ve) {
-		e.Errors = append(e.Errors, ve)
-		return nil
-	}
-
+	// Check for ValidationErrors first, because errors.As will unwrap ValidationErrors
+	// and match ValidationError if we check ValidationError first
 	var ves *ValidationErrors
 	if errors.As(err, &ves) {
 		e.Errors = append(e.Errors, ves.Errors...)
+		return nil
+	}
+
+	var ve *ValidationError
+	if errors.As(err, &ve) {
+		e.Errors = append(e.Errors, ve)
 		return nil
 	}
 
