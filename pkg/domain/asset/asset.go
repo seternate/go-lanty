@@ -49,9 +49,11 @@ func hydrateAsset(id uuid.UUID, assetURL string, size uint64, checksum string, a
 	validationErrors := domainerr.ValidationErrs()
 
 	u, err := url.Parse(assetURL)
-	err = validationErrors.Wrap(domainerr.ValidationErr("asset URL", "failed to parse URL").WithGot(assetURL).WithCause(err))
 	if err != nil {
-		return nil, err
+		err = validationErrors.Wrap(domainerr.ValidationErr("asset URL", "failed to parse URL").WithGot(assetURL).WithCause(err))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	parsedAlgo, err := ParseChecksumAlgorithm(algorithm)
