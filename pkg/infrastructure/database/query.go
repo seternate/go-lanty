@@ -17,10 +17,26 @@ func GenerateNonZeroColumnValueMap(resource any, columnBlacklist ...string) (map
 }
 
 func generateColumnValueMap(resource any, removeZero bool, columnBlacklist ...string) (map[string]any, error) {
-	columnvaluemap := make(map[string]any, 0)
+	if resource == nil {
+		return nil, fmt.Errorf("failed to generate column value map: resource is nil")
+	}
 
 	v := reflect.ValueOf(resource)
 	t := reflect.TypeOf(resource)
+
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return nil, fmt.Errorf("failed to generate column value map: resource pointer is nil")
+		}
+		v = v.Elem()
+		t = t.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("failed to generate column value map: expected struct or pointer to struct, got %T", resource)
+	}
+
+	columnvaluemap := make(map[string]any)
 
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
@@ -35,7 +51,7 @@ func generateColumnValueMap(resource any, removeZero bool, columnBlacklist ...st
 			column = sqlx.NameMapper(field.Name)
 		}
 
-		if columnBlacklist != nil && slices.Contains(columnBlacklist, column) {
+		if len(columnBlacklist) > 0 && slices.Contains(columnBlacklist, column) {
 			continue
 		}
 
