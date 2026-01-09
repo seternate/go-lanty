@@ -21,7 +21,7 @@ func ErrorHandler(ctx *gin.Context) {
 	}
 
 	err := ctx.Errors.Last().Err
-	if err != nil {
+	if err == nil {
 		return
 	}
 

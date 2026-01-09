@@ -24,7 +24,7 @@ func Init(router *gin.Engine) *httpServer {
 	httpserver := &http.Server{
 		Handler: router.Handler(),
 		BaseContext: func(net.Listener) context.Context {
-			return context.TODO()
+			return context.Background()
 		},
 	}
 
