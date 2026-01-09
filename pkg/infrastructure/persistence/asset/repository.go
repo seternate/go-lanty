@@ -69,18 +69,19 @@ func (repository *assetrepository) CreateAsset(a *asset.Asset) error {
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
+		return fmt.Errorf("failed to build query for assets table for asset id=%s: %w", a.ID.String(), err)
+	}
+
+	_, err = repository.db.Exec(query, args...)
+	if err != nil {
+		err = fmt.Errorf("database query failed for assets table for asset id=%s: %s (%v): %w", a.ID.String(), query, args, err)
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == pgerrcode.UniqueViolation {
 				return domainerr.ConflictErr("asset", a.ID.String()).WithCause(err)
 			}
 		}
-		return fmt.Errorf("failed to build query for assets table for asset id=%s: %w", a.ID.String(), err)
-	}
-
-	_, err = repository.db.Exec(query, args...)
-	if err != nil {
-		return fmt.Errorf("database query failed for assets table for asset id=%s: %s (%v): %w", a.ID.String(), query, args, err)
+		return err
 	}
 
 	return nil
