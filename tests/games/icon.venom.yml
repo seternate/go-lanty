@@ -141,7 +141,6 @@ testcases:
   steps:
   - type: exec
     script: |
-      echo '{{.venom.testsuite.workdir}}'
       curl -X PUT \
         -H "Content-Type: image/png" \
         -H "Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=" \

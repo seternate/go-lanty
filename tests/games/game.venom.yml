@@ -17,18 +17,6 @@ testcases:
     - result.timeseconds ShouldBeLessThan 1
     - result.bodyjson ShouldNotBeNil
 
-# GET /games/:slug - Get existing game (game may not exist in test environment)
-- name: GET game by slug - Existing game
-  steps:
-  - type: http
-    method: GET
-    url: "{{.url}}/api/v1/games/rune"
-    timeout: 5
-    assertions:
-    - result.statuscode ShouldBeGreaterThanOrEqualTo 200
-    - result.statuscode ShouldBeLessThan 500
-    - result.timeseconds ShouldBeLessThan 1
-
 # GET /games/:slug - Get non-existing game
 - name: GET game by slug - Non-existing game
   steps:
@@ -78,6 +66,19 @@ testcases:
     timeout: 5
     assertions:
     - result.statuscode ShouldEqual 201
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.slug ShouldEqual "{{.testGameSlug}}"
+    - result.bodyjson.name ShouldEqual "Test Game from Venom"
+
+# GET /games/:slug - Get existing game (uses game created above)
+- name: GET game by slug - Existing game
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
     - result.timeseconds ShouldBeLessThan 1
     - result.bodyjson.slug ShouldEqual "{{.testGameSlug}}"
     - result.bodyjson.name ShouldEqual "Test Game from Venom"
@@ -157,7 +158,7 @@ testcases:
     - result.timeseconds ShouldBeLessThan 1
 
 # PUT /games/:slug - Verify URL slug is used (body doesn't include slug field)
-- name: PUT game - Slug mismatch
+- name: PUT game - Verify URL slug is used
   steps:
   - type: http
     method: PUT
