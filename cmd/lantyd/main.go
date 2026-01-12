@@ -82,47 +82,47 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 	defer db.Close()
-
-	//TODO: FINISH SETUP
-
 	persistance := persistence.NewRepositories(db)
 
-	// Ensure storage directories exist
+	checksumCalculator := checksum.NewCalculator()
+	mimeTypeDetector := mimetype.NewDetector()
+
 	osFS := afero.NewOsFs()
-	err = osFS.MkdirAll("./blob", 0755)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to create blob directory")
-	}
-	err = osFS.MkdirAll("./icon", 0755)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to create icon directory")
+	directories := map[string]string{"blob": "./blob", "icon": "./icon"}
+	for dir, path := range directories {
+		err = osFS.MkdirAll(path, 0755)
+		if err != nil {
+			log.Fatal().Err(err).Msgf("failed to create %s directory", dir)
+		}
 	}
 
-	gamefileFS := afero.NewBasePathFs(osFS, "./blob")
-	gamefileStorageAdapter := storageadapter.NewFilesystemStorageAdapter(gamefileFS)
-	gamefileCalculator := checksum.NewCalculator()
-	mimeTypeDetector := mimetype.NewDetector()
+	gamefileStorageAdapter := storageadapter.NewFilesystemStorageAdapter(
+		afero.NewBasePathFs(osFS, directories["blob"]),
+	)
+	gameiconStorageAdapter := storageadapter.NewFilesystemStorageAdapter(
+		afero.NewBasePathFs(osFS, directories["icon"]),
+	)
+
 	appfileassetservice := appassetsrv.NewService(
 		appassetsrv.NewQueryService(db, gamefileStorageAdapter),
-		appassetsrv.NewCommandService(persistance.Asset, gamefileStorageAdapter, gamefileCalculator, mimeTypeDetector),
+		appassetsrv.NewCommandService(persistance.Asset, gamefileStorageAdapter, checksumCalculator, mimeTypeDetector),
 	)
-
-	gameiconFS := afero.NewBasePathFs(osFS, "./icon")
-	gameIconStorageAdapter := storageadapter.NewFilesystemStorageAdapter(gameiconFS)
-	gameiconCalculator := checksum.NewCalculator()
 	appiconassetservice := appassetsrv.NewService(
-		appassetsrv.NewQueryService(db, gameIconStorageAdapter),
-		appassetsrv.NewCommandService(persistance.Asset, gameIconStorageAdapter, gameiconCalculator, mimeTypeDetector),
+		appassetsrv.NewQueryService(db, gameiconStorageAdapter),
+		appassetsrv.NewCommandService(persistance.Asset, gameiconStorageAdapter, checksumCalculator, mimeTypeDetector),
 	)
 
-	appgamecommandservice := appgamesrv.NewCommandService(
-		persistance.Game,
-		appiconassetservice,
-		appfileassetservice,
-	)
 	appgameservice := appgamesrv.NewService(
-		appgamesrv.NewQueryService(db, appiconassetservice, appfileassetservice),
-		appgamecommandservice,
+		appgamesrv.NewQueryService(
+			db,
+			appiconassetservice,
+			appfileassetservice,
+		),
+		appgamesrv.NewCommandService(
+			persistance.Game,
+			appiconassetservice,
+			appfileassetservice,
+		),
 	)
 
 	controller := controller.New(appgameservice)
@@ -139,7 +139,6 @@ func main() {
 		log.Fatal().Msgf("unsupported scheme: %s", config.Scheme)
 	}
 
-	//Gracefully shutdown http server
 	errgrp.Go(func() error {
 		<-errCtx.Done()
 		timeout := 10 * time.Second
@@ -155,7 +154,6 @@ func main() {
 		return serr
 	})
 
-	//Waits for any os.Signal or an error in the buisness loop
 	err = errgrp.Wait()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal().Err(err).Msg("unexpected application error")
