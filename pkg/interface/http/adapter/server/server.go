@@ -16,7 +16,7 @@ type httpServer struct {
 
 var server *httpServer
 
-func Init(router *gin.Engine) *httpServer {
+func Init(ctx context.Context, router *gin.Engine) *httpServer {
 	if server != nil {
 		return server
 	}
@@ -24,7 +24,7 @@ func Init(router *gin.Engine) *httpServer {
 	httpserver := &http.Server{
 		Handler: router.Handler(),
 		BaseContext: func(net.Listener) context.Context {
-			return context.Background()
+			return ctx
 		},
 	}
 
@@ -46,4 +46,8 @@ func (server *httpServer) Run(port int) error {
 	}
 
 	return server.server.Serve(listener)
+}
+
+func (server *httpServer) Shutdown(ctx context.Context) error {
+	return server.server.Shutdown(ctx)
 }
