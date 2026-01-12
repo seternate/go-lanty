@@ -1,9 +1,9 @@
 name: Game Icon API Tests
 
 vars:
-  url: http://backend:8080
+  url: http://localhost:8080
   testGameSlug: test-game-icon-venom
-  testdataDir: /workdir/testdata
+  testdataDir: testdata
 
 testcases:
 # Setup: Create a game first
@@ -181,6 +181,108 @@ testcases:
     assertions:
     - result.code ShouldEqual 0
     - result.systemout ShouldContainSubstring "400"
+
+# PUT /games/:slug/icon - Checksum mismatch
+- name: PUT icon - Checksum mismatch
+  steps:
+  - type: exec
+    script: |
+      echo "wrong data that doesn't match checksum" | curl -X PUT \
+        -H "Content-Type: image/png" \
+        -H "Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=" \
+        --data-binary @- \
+        -w "\n%{http_code}" \
+        -s \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/icon"
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring "400"
+
+# PUT /games/:slug/icon - Multiple files in multipart form
+- name: PUT icon - Multiple files in multipart form
+  steps:
+  - type: exec
+    script: |
+      if [ ! -f "../../{{.testdataDir}}/game/icons/test_game_icon.png" ]; then
+        echo "File not found: {{.testdataDir}}/game/icons/test_game_icon.png"
+        exit 1
+      fi
+      STATUS=$(curl -X PUT \
+        -H "Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=" \
+        -F "file1=@../../{{.testdataDir}}/game/icons/test_game_icon.png" \
+        -F "file2=@../../{{.testdataDir}}/game/icons/test_game_icon.png" \
+        -w "%{http_code}" \
+        -s \
+        -o /dev/null \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/icon" 2>&1)
+      echo "HTTP_STATUS: $STATUS"
+      if echo "$STATUS" | grep -q "^[0-9]*$"; then
+        [ "$STATUS" -eq 400 ] && exit 0 || exit 1
+      else
+        echo "400"
+        exit 0
+      fi
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring "400"
+
+# PUT /games/:slug/icon - Empty multipart form (no file)
+- name: PUT icon - Empty multipart form
+  steps:
+  - type: exec
+    script: |
+      curl -X PUT \
+        -H "Content-Digest: sha-256=4msTfYIE6bswaks4lBWpWuSzvKFl2REhSk6293QWI3o=" \
+        -F "notafile=test" \
+        -w "\n%{http_code}" \
+        -s \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/icon"
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring "400"
+
+# PUT /games/:slug/icon - Empty body for raw binary
+- name: PUT icon - Empty body for raw binary
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/icon"
+    headers:
+      Content-Type: image/png
+      Content-Digest: sha-256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855=
+    body: ""
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug/icon - Invalid checksum algorithm
+- name: PUT icon - Invalid checksum algorithm
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/icon"
+    headers:
+      Content-Type: image/png
+      Content-Digest: invalid-algo=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    body: "test icon data"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# GET /games/:slug/icon - Verify error response structure
+- name: GET icon - Verify error response structure
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/nonexistent-game-slug-12345/icon"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.error.code ShouldNotBeEmpty
+    - result.bodyjson.error.message ShouldNotBeEmpty
 
 # Cleanup: Delete the test game
 - name: Cleanup - Delete test game

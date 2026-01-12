@@ -1,3 +1,0 @@
-variables:
-- url=http://localhost:8080
-- testdataDir=testdata

@@ -171,18 +171,16 @@ func TestQueryService_GetGame(t *testing.T) {
 		service, mock, _, _, cleanup := setupQueryServiceTest(t)
 		defer cleanup()
 
-		// GetGame query selects 30 columns (7 exec + 23 arg), but queryRow has 32 fields
-		// The query doesn't select game_slug, game_name, game_created_at
-		// sqlx will map by column name, so we only need to provide the 30 columns the query selects
 		createdAt := time.Now()
 		rows := sqlmock.NewRows([]string{
+			"game_slug", "game_name", "game_created_at",
 			"exec_game_slug", "exec_role", "exec_path", "exec_requires_admin", "exec_format", "exec_arg_seperator", "exec_created_at",
 			"arg_id", "arg_game_exec_id", "arg_role", "arg_name", "arg_required", "arg_enabled", "arg_format", "arg_separator", "arg_arg", "arg_description",
 			"arg_default_string", "arg_default_bool", "arg_default_int", "arg_default_float", "arg_enums", "arg_min_int", "arg_max_int",
 			"arg_min_float", "arg_max_float", "arg_float_precision", "arg_order_index", "arg_created_at",
 		})
-		// Provide 30 values matching the query
 		rows.AddRow(
+			"test-game", "Test Game", createdAt,
 			"test-game", "client", "/path/to/client", 
 			sql.NullBool{Valid: true, Bool: true}, sql.NullString{}, sql.NullString{}, 
 			sql.NullTime{Valid: true, Time: createdAt},
@@ -195,14 +193,12 @@ func TestQueryService_GetGame(t *testing.T) {
 		mock.ExpectQuery(`SELECT`).WithArgs("test-game").WillReturnRows(rows)
 
 		game, err := service.GetGame("test-game")
-		// This will fail because game_slug is not selected, but we test the query execution
-		// The actual error handling is what we're testing
-		if err != nil {
-			// Expected - game_slug is required but not selected
-			assert.Contains(t, err.Error(), "game")
-		} else {
-			assert.NotNil(t, game)
-		}
+		require.NoError(t, err)
+		require.NotNil(t, game)
+		assert.Equal(t, "test-game", game.Slug)
+		assert.Equal(t, "Test Game", game.Name)
+		assert.WithinDuration(t, createdAt, game.CreatedAt, time.Second)
+		assert.Empty(t, game.Execs)
 
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -212,7 +208,8 @@ func TestQueryService_GetGame(t *testing.T) {
 		defer cleanup()
 
 		rows := sqlmock.NewRows([]string{
-			"game_slug", "exec_game_slug", "exec_role", "exec_path", "exec_requires_admin", "exec_format", "exec_arg_seperator", "exec_created_at",
+			"game_slug", "game_name", "game_created_at",
+			"exec_game_slug", "exec_role", "exec_path", "exec_requires_admin", "exec_format", "exec_arg_seperator", "exec_created_at",
 			"arg_id", "arg_game_exec_id", "arg_role", "arg_name", "arg_required", "arg_enabled", "arg_format", "arg_separator", "arg_arg", "arg_description",
 			"arg_default_string", "arg_default_bool", "arg_default_int", "arg_default_float", "arg_enums", "arg_min_int", "arg_max_int",
 			"arg_min_float", "arg_max_float", "arg_float_precision", "arg_order_index", "arg_created_at",

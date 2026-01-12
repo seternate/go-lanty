@@ -116,6 +116,11 @@ func hydrateGameArg(input GameArgInput) (GameArg, error) {
 		return nil, err
 	}
 
+	err = validationErrors.Wrap(validateOrderIndex(input.OrderIndex))
+	if err != nil {
+		return nil, err
+	}
+
 	base := GameArgFlag{
 		Name:         input.Name,
 		Required:     input.Required,
@@ -304,6 +309,14 @@ func validateArgFormat(format *string) (*template.Template, error) {
 	}
 
 	return tmpl, nil
+}
+
+func validateOrderIndex(orderIndex int64) error {
+	if orderIndex < 0 {
+		return domainerr.ValidationErr("order index", "must be non-negative").WithGot("order_index=%d", orderIndex)
+	}
+
+	return nil
 }
 
 func validateStringArg(input GameArgInput) error {

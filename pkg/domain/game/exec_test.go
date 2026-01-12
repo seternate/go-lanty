@@ -181,16 +181,16 @@ func TestNewGameExec(t *testing.T) {
 	t.Run("With Args", func(t *testing.T) {
 		defaultVal := "default"
 		arg1, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		arg2, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg2",
+			Role:          "string",
+			Name:          "arg2",
 			DefaultString: &defaultVal,
-			OrderIndex:   2,
+			OrderIndex:    2,
 		})
 		exec, err := NewGameExec("/path/to/executable", "client", WithArgs(arg1, arg2))
 		if err != nil {
@@ -204,16 +204,16 @@ func TestNewGameExec(t *testing.T) {
 	t.Run("With duplicate OrderIndex", func(t *testing.T) {
 		defaultVal := "default"
 		arg1, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		arg2, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg2",
+			Role:          "string",
+			Name:          "arg2",
 			DefaultString: &defaultVal,
-			OrderIndex:   1, // duplicate
+			OrderIndex:    1, // duplicate
 		})
 		exec, err := NewGameExec("/path/to/executable", "client", WithArgs(arg1, arg2))
 		if err == nil {
@@ -234,10 +234,10 @@ func TestNewGameExec(t *testing.T) {
 		separator := " "
 		defaultVal := "default"
 		arg, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		exec, err := NewGameExec("/path/to/executable", "server",
 			WithRequiresAdmin(&requiresAdmin),
@@ -334,16 +334,16 @@ func TestValidateUniqueOrderIndexArgs(t *testing.T) {
 	t.Run("Unique order indices", func(t *testing.T) {
 		defaultVal := "default"
 		arg1, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		arg2, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg2",
+			Role:          "string",
+			Name:          "arg2",
 			DefaultString: &defaultVal,
-			OrderIndex:   2,
+			OrderIndex:    2,
 		})
 		err := validateUniqueOrderIndexArgs([]GameArg{arg1, arg2})
 		if err != nil {
@@ -354,16 +354,16 @@ func TestValidateUniqueOrderIndexArgs(t *testing.T) {
 	t.Run("Duplicate order indices", func(t *testing.T) {
 		defaultVal := "default"
 		arg1, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		arg2, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg2",
+			Role:          "string",
+			Name:          "arg2",
 			DefaultString: &defaultVal,
-			OrderIndex:   1, // duplicate
+			OrderIndex:    1, // duplicate
 		})
 		err := validateUniqueOrderIndexArgs([]GameArg{arg1, arg2})
 		if err == nil {
@@ -503,16 +503,16 @@ func TestWithArgs(t *testing.T) {
 		exec := &GameExec{}
 		defaultVal := "default"
 		arg1, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		arg2, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg2",
+			Role:          "string",
+			Name:          "arg2",
 			DefaultString: &defaultVal,
-			OrderIndex:   2,
+			OrderIndex:    2,
 		})
 		err := WithArgs(arg1, arg2)(exec)
 		if err != nil {
@@ -527,16 +527,16 @@ func TestWithArgs(t *testing.T) {
 		exec := &GameExec{}
 		defaultVal := "default"
 		arg1, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg1",
+			Role:          "string",
+			Name:          "arg1",
 			DefaultString: &defaultVal,
-			OrderIndex:   1,
+			OrderIndex:    1,
 		})
 		arg2, _ := NewGameArg(GameArgInput{
-			Role:         "string",
-			Name:         "arg2",
+			Role:          "string",
+			Name:          "arg2",
 			DefaultString: &defaultVal,
-			OrderIndex:   1, // duplicate
+			OrderIndex:    1, // duplicate
 		})
 		err := WithArgs(arg1, arg2)(exec)
 		if err == nil {

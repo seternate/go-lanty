@@ -24,42 +24,6 @@ services:
       database:
         condition: service_healthy
 
-  database-testdata:
-    build: ./database/testdata
-    environment:
-      GOOSE_DRIVER: postgres
-      GOOSE_DBSTRING: postgres://lanty:lanty@database:5432/lanty?sslmode=disable
-    profiles:
-    - manual
-    depends_on:
-      database:
-        condition: service_healthy
-      database-migration:
-        condition: service_completed_successfully
-
-  test:
-    image: ovhcom/venom:latest
-    profiles:
-    - manual
-    volumes:
-    - ./tests:/workdir/tests
-    - ./testdata:/workdir/testdata
-    - ./test-results:/workdir/results
-    working_dir: /workdir
-    depends_on:
-      backend:
-        condition: service_started
-
-  unit-test:
-    image: golang:1.25-alpine
-    profiles:
-    - manual
-    command:
-    - go test -v -coverprofile cover.out ./code/...
-    - go tool cover -html cover.out -o cover.html
-    volumes:
-    - ./:$PWD/code
-
   backend:
     build: ./
     command: ["--db", "postgres://lanty:lanty@database:5432/lanty?sslmode=disable", "--loglevel", "debug"]

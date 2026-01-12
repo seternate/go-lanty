@@ -127,6 +127,8 @@ func (service *queryServiceImpl) GetGame(slug string) (*GameView, error) {
 	query, args, err := sq.
 		Select(
 			"g.slug AS game_slug",
+			"g.name AS game_name",
+			"g.created_at AS game_created_at",
 			"e.game_slug AS exec_game_slug",
 			"e.role AS exec_role",
 			"e.path AS exec_path",

@@ -30,6 +30,20 @@ func NewCommandService(repository game.GameRepository, iconAssetService *asset.S
 }
 
 func (service *commandServiceImpl) UpsertGame(cmd UpsertGameCommand) (*game.Game, bool, error) {
+	seenRoles := make(map[string]bool)
+	validationErrors := domainerr.ValidationErrs()
+
+	for _, executable := range cmd.Executables {
+		if seenRoles[executable.Role] {
+			validationErrors.Wrap(domainerr.ValidationErr("executables", "duplicate role found").WithGot("role=%s", executable.Role))
+		}
+		seenRoles[executable.Role] = true
+	}
+
+	if validationErrors.HasErrors() {
+		return nil, false, fmt.Errorf("failed to validate executables for slug=%s: %w", cmd.Slug, validationErrors)
+	}
+
 	executables := make([]*game.GameExec, 0, len(cmd.Executables))
 	for _, executable := range cmd.Executables {
 		args := make([]game.GameArg, 0, len(executable.Args))

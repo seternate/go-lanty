@@ -137,6 +137,27 @@ func TestNewGameArg_Flag(t *testing.T) {
 			t.Errorf("expected InvariantViolationError, got %T", err)
 		}
 	})
+
+	t.Run("Negative order index", func(t *testing.T) {
+		format := "{{.Value}}"
+		arg, err := NewGameArg(GameArgInput{
+			Role:       "flag",
+			Name:       "test-flag",
+			Arg:        "--flag",
+			Format:     &format,
+			OrderIndex: -1,
+		})
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
+		if arg != nil {
+			t.Error("expected nil arg")
+		}
+		var invariantErr *domainerr.InvariantViolationError
+		if !errors.As(err, &invariantErr) {
+			t.Errorf("expected InvariantViolationError, got %T", err)
+		}
+	})
 }
 
 func TestNewGameArg_String(t *testing.T) {

@@ -388,6 +388,89 @@ func TestCommandService_UpsertGame(t *testing.T) {
 		assert.Nil(t, game)
 		assert.Contains(t, err.Error(), "failed to update game name")
 	})
+
+	t.Run("duplicate executable roles", func(t *testing.T) {
+		repo := newMockGameRepository()
+		iconService := createMockAssetService(nil, nil)
+		blobService := createMockAssetService(nil, nil)
+
+		service := NewCommandService(repo, iconService, blobService)
+
+		cmd := UpsertGameCommand{
+			Slug: "test-game",
+			Name: "Test Game",
+			Executables: []UpsertGameExecutable{
+				{
+					Role: "client",
+					Path: "/path/to/client1",
+				},
+				{
+					Role: "client", // Duplicate role
+					Path: "/path/to/client2",
+				},
+			},
+		}
+
+		game, created, err := service.UpsertGame(cmd)
+		assert.Error(t, err)
+		assert.False(t, created)
+		assert.Nil(t, game)
+		assert.Contains(t, err.Error(), "failed to validate executables")
+
+		// Verify it's a validation error
+		var validationErr domainerr.Validation
+		assert.ErrorAs(t, err, &validationErr)
+
+		// Verify the error contains information about duplicate roles
+		assert.Contains(t, err.Error(), "duplicate role found")
+		assert.Contains(t, err.Error(), "role=client")
+	})
+
+	t.Run("multiple duplicate executable roles", func(t *testing.T) {
+		repo := newMockGameRepository()
+		iconService := createMockAssetService(nil, nil)
+		blobService := createMockAssetService(nil, nil)
+
+		service := NewCommandService(repo, iconService, blobService)
+
+		cmd := UpsertGameCommand{
+			Slug: "test-game",
+			Name: "Test Game",
+			Executables: []UpsertGameExecutable{
+				{
+					Role: "client",
+					Path: "/path/to/client1",
+				},
+				{
+					Role: "server",
+					Path: "/path/to/server1",
+				},
+				{
+					Role: "client", // First duplicate
+					Path: "/path/to/client2",
+				},
+				{
+					Role: "server", // Second duplicate
+					Path: "/path/to/server2",
+				},
+			},
+		}
+
+		game, created, err := service.UpsertGame(cmd)
+		assert.Error(t, err)
+		assert.False(t, created)
+		assert.Nil(t, game)
+		assert.Contains(t, err.Error(), "failed to validate executables")
+
+		// Verify it's a validation error
+		var validationErr domainerr.Validation
+		assert.ErrorAs(t, err, &validationErr)
+
+		// Verify the error contains information about duplicate roles
+		assert.Contains(t, err.Error(), "duplicate role found")
+		assert.Contains(t, err.Error(), "role=client")
+		assert.Contains(t, err.Error(), "role=server")
+	})
 }
 
 func TestCommandService_DeleteGame(t *testing.T) {

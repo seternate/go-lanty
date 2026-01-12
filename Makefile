@@ -1,55 +1,41 @@
-.PHONY: help build run test clean vet lint docker-build docker-up docker-down db-up db-down swagger test-e2e test-e2e-all
+.PHONY: help run test test-coverage test-e2e swagger clean db-up db-down db-reset
 
-# Variables
-BINARY_NAME=lantyd
 MAIN_PATH=./cmd/lantyd
-DOCKER_COMPOSE=docker-compose
-GO=go
-ARGS?=--db "postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable" --loglevel "debug"
-APP_VERSION?=dev-build
 
-# Default target
 .DEFAULT_GOAL := help
 
-## help: Show this help message
-help:
+help: ## Show this help message
 	@echo 'Usage: make [target]'
 	@echo ''
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build:
-	@echo "Building $(BINARY_NAME)..."
-	$(GO) build -o $(BINARY_NAME) -ldflags "-X main.AppVersion=$(APP_VERSION)" $(MAIN_PATH)
-	@echo "Build complete: $(BINARY_NAME)"
+run: ## Run the application locally
+	@echo "Running..."
+	go run $(MAIN_PATH) --db "postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable" --loglevel "debug"
 
-run:
-	@echo "Running $(BINARY_NAME)..."
-	$(GO) run $(MAIN_PATH) $(ARGS)
-
-test:
+test: ## Run all tests
 	@echo "Running tests..."
-	$(GO) test ./...
+	go test ./...
 
-test-coverage:
+test-coverage: ## Run tests with coverage report
 	@echo "Running tests with coverage..."
-	$(GO) test -coverprofile=coverage.out ./...
-	$(GO) tool cover -html=coverage.out -o coverage.html
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
-	$(GO) tool cover -func=coverage.out
+	go tool cover -func=coverage.out
 
-test-e2e:
+test-e2e: ## Run e2e tests with venom
 	@echo "Running e2e tests with venom..."
-	@echo "Make sure backend is running: make docker-up-build"
-	@$(DOCKER_COMPOSE) run --rm test run tests/games/*.venom.yml tests/health.venom.yml
+	@echo "Make sure backend is running"
+	@if ! command -v venom >/dev/null 2>&1; then \
+		echo "venom not found. Install it with: go install github.com/ovh/venom/cmd/venom@latest"; \
+		exit 1; \
+	fi
+	@mkdir -p test-results
+	@venom run --output-dir test-results $$(find tests -name "*.venom.yml")
 
-test-e2e-all:
-	@echo "Running all e2e tests with venom..."
-	@echo "Make sure backend is running: make docker-up-build"
-	@$(DOCKER_COMPOSE) run --rm test run tests/
-
-## swagger: Generate Swagger documentation
-swagger:
+swagger: ## Generate Swagger documentation
 	@echo "Generating Swagger documentation..."
 	@if command -v swag >/dev/null 2>&1; then \
 		swag init -g $(MAIN_PATH)/main.go --outputTypes go,yaml ; \
@@ -59,64 +45,27 @@ swagger:
 		exit 1; \
 	fi
 
-## clean: Remove build artifacts
-clean:
-	@echo "Cleaning build artifacts..."
-	rm -f $(BINARY_NAME)
+clean: ## Remove artifacts
 	rm -f coverage.out coverage.html
+	rm -rf test-results/
 	@echo "Clean complete"
 
-## docker-build: Build the Docker image
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t go-lanty:latest .
-	@echo "Docker build complete"
-
-## docker-up: Start the full docker-compose stack
-docker-up:
-	@echo "Starting docker-compose stack..."
-	$(DOCKER_COMPOSE) up -d
-	@echo "Docker-compose stack started"
-
-## docker-up-build: Start the full docker-compose stack and build images
-docker-up-build:
-	@echo "Building and starting docker-compose stack..."
-	$(DOCKER_COMPOSE) up -d --build
-	@echo "Docker-compose stack built and started"
-
-## docker-down: Stop the docker-compose stack
-docker-down:
-	@echo "Stopping docker-compose stack..."
-	$(DOCKER_COMPOSE) down
-	@echo "Docker-compose stack stopped"
-
-## db-up: Start database with migrations
-db-up:
+db-up: ## Start database with migrations
 	@echo "Starting database with migrations..."
-	$(DOCKER_COMPOSE) up -d database
+	docker compose up -d database
 	@echo "Waiting for database to be healthy..."
-	@$(DOCKER_COMPOSE) up database-migration
+	@docker compose up database-migration
 	@echo "Database and migrations are ready"
 
-## db-down: Stop database
-db-down:
+db-down: ## Stop database
 	@echo "Stopping database..."
-	$(DOCKER_COMPOSE) stop database
+	docker compose stop database
 	@echo "Database stopped"
 
-## db-reset: Reset database (stop, remove volumes, start with migrations)
-db-reset:
+db-reset: ## Reset database (stop, remove volumes, start with migrations)
 	@echo "Resetting database..."
-	$(DOCKER_COMPOSE) down -v database database-migration
-	$(DOCKER_COMPOSE) up -d database
+	docker compose down -v database database-migration
+	docker compose up -d database
 	@echo "Waiting for database to be healthy..."
-	@$(DOCKER_COMPOSE) up database-migration
+	@docker compose up database-migration
 	@echo "Database reset complete"
-
-## dev: Start database and run the application locally
-dev: db-up
-	@echo "Starting development environment..."
-	@echo "Database is ready. Starting application..."
-	$(MAKE) run
-
-

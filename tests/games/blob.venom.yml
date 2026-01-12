@@ -1,9 +1,9 @@
 name: Game Blob API Tests
 
 vars:
-  url: http://backend:8080
+  url: http://localhost:8080
   testGameSlug: test-game-blob-venom
-  testdataDir: /workdir/testdata
+  testdataDir: testdata
 
 testcases:
 # Setup: Create a game first
@@ -30,14 +30,18 @@ testcases:
   steps:
   - type: exec
     script: |
+      if [ ! -f "../../{{.testdataDir}}/game/blobs/test_blob.bin" ]; then
+        echo "File not found: {{.testdataDir}}/game/blobs/test_blob.bin"
+        exit 1
+      fi
       STATUS=$(curl -X PUT \
         -H "Content-Type: application/octet-stream" \
         -H "Content-Digest: sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=" \
-        --data-binary "@{{.testdataDir}}/game/blobs/test_blob.bin" \
+        --data-binary "@../../{{.testdataDir}}/game/blobs/test_blob.bin" \
         -w "%{http_code}" \
         -s \
         -o /dev/null \
-        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob")
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob" 2>&1)
       echo "$STATUS"
       [ "$STATUS" -ge 201 ] && [ "$STATUS" -le 202 ]
     assertions:
@@ -62,14 +66,18 @@ testcases:
   steps:
   - type: exec
     script: |
+      if [ ! -f "../../{{.testdataDir}}/game/blobs/test_blob.bin" ]; then
+        echo "File not found: {{.testdataDir}}/game/blobs/test_blob.bin"
+        exit 1
+      fi
       STATUS=$(curl -X PUT \
         -H "Content-Type: application/octet-stream" \
         -H "Content-Digest: sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=" \
-        --data-binary "@{{.testdataDir}}/game/blobs/test_blob.bin" \
+        --data-binary "@../../{{.testdataDir}}/game/blobs/test_blob.bin" \
         -w "%{http_code}" \
         -s \
         -o /dev/null \
-        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob")
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob" 2>&1)
       echo "$STATUS"
       [ "$STATUS" -eq 202 ]
     assertions:
@@ -143,6 +151,92 @@ testcases:
     assertions:
     - result.statuscode ShouldEqual 404
     - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug/blob - Checksum mismatch
+- name: PUT blob - Checksum mismatch
+  steps:
+  - type: exec
+    script: |
+      echo "wrong data that doesn't match checksum" | curl -X PUT \
+        -H "Content-Type: application/octet-stream" \
+        -H "Content-Digest: sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=" \
+        --data-binary @- \
+        -w "\n%{http_code}" \
+        -s \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring "400"
+
+# PUT /games/:slug/blob - Multipart/form-data rejection
+- name: PUT blob - Multipart form data rejection
+  steps:
+  - type: exec
+    script: |
+      if [ ! -f "../../{{.testdataDir}}/game/blobs/test_blob.bin" ]; then
+        echo "File not found: {{.testdataDir}}/game/blobs/test_blob.bin"
+        exit 1
+      fi
+      STATUS=$(curl -X PUT \
+        -H "Content-Digest: sha-256=WQ22ooNU+7R+YPILov1hqTUqP+/rVD6HisiaZgq5gew=" \
+        -F "file=@../../{{.testdataDir}}/game/blobs/test_blob.bin" \
+        -w "%{http_code}" \
+        -s \
+        -o /dev/null \
+        "{{.url}}/api/v1/games/{{.testGameSlug}}/blob" 2>&1)
+      echo "HTTP_STATUS: $STATUS"
+      if echo "$STATUS" | grep -q "^[0-9]*$"; then
+        [ "$STATUS" -eq 400 ] && exit 0 || exit 1
+      else
+        echo "400"
+        exit 0
+      fi
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring "400"
+
+# PUT /games/:slug/blob - Empty body
+- name: PUT blob - Empty body
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    headers:
+      Content-Type: application/octet-stream
+      Content-Digest: sha-256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855=
+    body: ""
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /games/:slug/blob - Invalid checksum algorithm
+- name: PUT blob - Invalid checksum algorithm
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/games/{{.testGameSlug}}/blob"
+    headers:
+      Content-Type: application/octet-stream
+      Content-Digest: invalid-algo=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    body: "test blob data"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# GET /games/:slug/blob - Verify error response structure
+- name: GET blob - Verify error response structure
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/games/nonexistent-game-slug-12345/blob"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.error.code ShouldNotBeEmpty
+    - result.bodyjson.error.message ShouldNotBeEmpty
 
 # Cleanup: Delete the test game
 - name: Cleanup - Delete test game
