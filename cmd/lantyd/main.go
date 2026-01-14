@@ -13,17 +13,18 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/zerolog/log"
-	appassetsrv "github.com/seternate/go-lanty/pkg/application/asset"
-	appgamesrv "github.com/seternate/go-lanty/pkg/application/game"
-	"github.com/seternate/go-lanty/pkg/infrastructure/checksum"
-	"github.com/seternate/go-lanty/pkg/infrastructure/database"
-	"github.com/seternate/go-lanty/pkg/infrastructure/mimetype"
-	"github.com/seternate/go-lanty/pkg/infrastructure/persistence"
-	"github.com/seternate/go-lanty/pkg/infrastructure/storageadapter"
-	"github.com/seternate/go-lanty/pkg/interface/http/adapter/router"
-	"github.com/seternate/go-lanty/pkg/interface/http/adapter/server"
-	"github.com/seternate/go-lanty/pkg/interface/http/adapter/swagger"
-	"github.com/seternate/go-lanty/pkg/interface/http/controller"
+	appassetsrv "github.com/seternate/go-lanty/internal/application/asset"
+	appgamesrv "github.com/seternate/go-lanty/internal/application/game"
+	appusersrv "github.com/seternate/go-lanty/internal/application/user"
+	"github.com/seternate/go-lanty/internal/infrastructure/checksum"
+	"github.com/seternate/go-lanty/internal/infrastructure/database"
+	"github.com/seternate/go-lanty/internal/infrastructure/mimetype"
+	"github.com/seternate/go-lanty/internal/infrastructure/persistence"
+	"github.com/seternate/go-lanty/internal/infrastructure/storageadapter"
+	"github.com/seternate/go-lanty/internal/interface/http/adapter/router"
+	"github.com/seternate/go-lanty/internal/interface/http/adapter/server"
+	"github.com/seternate/go-lanty/internal/interface/http/adapter/swagger"
+	"github.com/seternate/go-lanty/internal/interface/http/controller"
 	"github.com/seternate/go-lanty/pkg/logging"
 	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
@@ -125,7 +126,12 @@ func main() {
 		),
 	)
 
-	controller := controller.New(appgameservice)
+	appuserservice := appusersrv.NewService(
+		appusersrv.NewQueryService(db),
+		appusersrv.NewCommandService(persistance.User),
+	)
+
+	controller := controller.New(appgameservice, appuserservice)
 	engine := router.New(controller)
 	swagger.InitInfo(APIVersion, config.Host, config.Port, router.APIBasePath, []string{config.Scheme})
 	httpserver := server.Init(errCtx, engine)

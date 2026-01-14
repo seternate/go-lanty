@@ -1,0 +1,325 @@
+name: User CRUD API Tests
+
+vars:
+  url: http://localhost:8080
+  testUserIPv4: 192.168.1.100
+  testUserIPv4Update: 192.168.1.101
+
+testcases:
+# GET /users - List all users
+- name: GET users - List all users
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/users"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson ShouldNotBeNil
+
+# PUT /users/:ipv4Address - Create new user
+- name: PUT user - Create new user
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/{{.testUserIPv4}}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "testuser"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.ipv4Address ShouldEqual "{{.testUserIPv4}}"
+    - result.bodyjson.username ShouldEqual "testuser"
+
+# GET /users - Verify user in list
+- name: GET users - Verify user in list
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/users"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson ShouldBeArray
+    - result.bodyjson ShouldNotBeEmpty
+
+# PUT /users/:ipv4Address - Update existing user
+- name: PUT user - Update existing user
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/{{.testUserIPv4}}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "updateduser"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 202
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.ipv4Address ShouldEqual "{{.testUserIPv4}}"
+    - result.bodyjson.username ShouldEqual "updateduser"
+
+# PUT /users/:ipv4Address - Create another user
+- name: PUT user - Create another user
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/{{.testUserIPv4Update}}"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "anotheruser"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 201
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.ipv4Address ShouldEqual "{{.testUserIPv4Update}}"
+    - result.bodyjson.username ShouldEqual "anotheruser"
+
+# PUT /users/:ipv4Address - Invalid request (missing username)
+- name: PUT user - Invalid request missing username
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.102"
+    headers:
+      Content-Type: application/json
+    body: |
+      {}
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Invalid JSON
+- name: PUT user - Invalid JSON
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.103"
+    headers:
+      Content-Type: application/json
+    body: "{ invalid json }"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Empty request body
+- name: PUT user - Empty request body
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.104"
+    headers:
+      Content-Type: application/json
+    body: ""
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Empty username
+- name: PUT user - Empty username
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.105"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": ""
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Invalid username (special characters)
+- name: PUT user - Invalid username with special characters
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.106"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "user@name!"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Username too long
+- name: PUT user - Username too long
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.107"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "a12345678901234567890123456789012345678901234567890123456789012345"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Invalid IPv4 address in URL
+- name: PUT user - Invalid IPv4 address in URL
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/invalid-ip-address"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "testuser"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - IPv6 address (should fail)
+- name: PUT user - IPv6 address
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "testuser"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 400
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Valid username with underscores and hyphens
+- name: PUT user - Valid username with underscores and hyphens
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.108"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "test_user-123"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldBeGreaterThanOrEqualTo 201
+    - result.statuscode ShouldBeLessThan 300
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.ipv4Address ShouldEqual "192.168.1.108"
+    - result.bodyjson.username ShouldEqual "test_user-123"
+
+# GET /users - Verify response structure
+- name: GET users - Verify response structure
+  steps:
+  - type: http
+    method: GET
+    url: "{{.url}}/api/v1/users"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 200
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson ShouldNotBeEmpty
+    - result.bodyjson ShouldBeArray
+
+# DELETE /users/:ipv4Address - Delete user
+- name: DELETE user - Delete existing user
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/users/{{.testUserIPv4}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 204
+    - result.timeseconds ShouldBeLessThan 1
+
+# DELETE /users/:ipv4Address - Delete another user
+- name: DELETE user - Delete another user
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/users/{{.testUserIPv4Update}}"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 204
+    - result.timeseconds ShouldBeLessThan 1
+
+# DELETE /users/:ipv4Address - Delete non-existing user
+- name: DELETE user - Delete non-existing user
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/users/192.168.1.200"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+
+# DELETE /users/:ipv4Address - Delete with invalid IPv4 address
+- name: DELETE user - Delete with invalid IPv4 address
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/users/invalid-ip"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 404
+    - result.timeseconds ShouldBeLessThan 1
+
+# PUT /users/:ipv4Address - Verify URL IPv4 address is used
+- name: PUT user - Verify URL IPv4 address is used
+  steps:
+  - type: http
+    method: PUT
+    url: "{{.url}}/api/v1/users/192.168.1.109"
+    headers:
+      Content-Type: application/json
+    body: |
+      {
+        "username": "urluser"
+      }
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldBeGreaterThanOrEqualTo 201
+    - result.statuscode ShouldBeLessThan 300
+    - result.timeseconds ShouldBeLessThan 1
+    - result.bodyjson.ipv4Address ShouldEqual "192.168.1.109"
+    - result.bodyjson.username ShouldEqual "urluser"
+
+# DELETE /users/:ipv4Address - Clean up test user
+- name: DELETE user - Clean up test user
+  steps:
+  - type: http
+    method: DELETE
+    url: "{{.url}}/api/v1/users/192.168.1.109"
+    timeout: 5
+    assertions:
+    - result.statuscode ShouldEqual 204
+    - result.timeseconds ShouldBeLessThan 1

@@ -27,6 +27,8 @@
 !database/testdata/*.sql
 !docs/
 !docs/swagger.yaml
+!internal/
+!internal/**/
 !pkg/
 !pkg/**/
 !testdata/
