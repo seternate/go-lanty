@@ -10,10 +10,10 @@ import (
 	domainGame "github.com/seternate/go-lanty/internal/domain/game"
 	"github.com/seternate/go-lanty/internal/interface/http/adapter/header"
 	errorx "github.com/seternate/go-lanty/internal/interface/http/error"
-	model "github.com/seternate/go-lanty/internal/interface/http/model"
+	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
 )
 
-var _ = model.ErrorResponse{}
+var _ = errormodel.ErrorResponse{}
 
 // @Summary Get a Games blob
 // @Description Get the blob for a Game
@@ -22,8 +22,8 @@ var _ = model.ErrorResponse{}
 // @Produce application/octet-stream, application/json
 // @Success 200 {file} file "Blob binary data"
 // @Header 200 {string} Content-Digest "Checksum (RFC 9530: algorithm=base64_checksum)"
-// @Failure 404 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
+// @Failure 404 {object} errormodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /games/{slug}/blob [get]
 func (ctl *EndpointController) GetBlob(ctx *gin.Context) {
 	slug := ctx.Param("slug")
@@ -56,9 +56,9 @@ func (ctl *EndpointController) GetBlob(ctx *gin.Context) {
 // @Produce json
 // @Success 201 "Blob created"
 // @Success 202 "Blob updated"
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 404 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
+// @Failure 400 {object} errormodel.ErrorResponse
+// @Failure 404 {object} errormodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /games/{slug}/blob [put]
 func (ctl *EndpointController) PutBlob(ctx *gin.Context) {
 	slug := ctx.Param("slug")

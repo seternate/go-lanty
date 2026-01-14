@@ -1,4 +1,4 @@
-package model
+package errormodel
 
 import (
 	"encoding/json"

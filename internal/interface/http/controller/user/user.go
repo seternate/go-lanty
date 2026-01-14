@@ -6,18 +6,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	errorx "github.com/seternate/go-lanty/internal/interface/http/error"
-	errmodel "github.com/seternate/go-lanty/internal/interface/http/model"
+	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
 	model "github.com/seternate/go-lanty/internal/interface/http/model/user"
 )
 
-var _ = errmodel.ErrorResponse{}
+var _ = errormodel.ErrorResponse{}
 
 // @Summary Get all Users
 // @Description Get all available Users
 // @Tags users
 // @Produce json
 // @Success 200 {array} model.UserResponse
-// @Failure 500 {object} errmodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /users [get]
 func (ctl *EndpointController) GetUsers(ctx *gin.Context) {
 	users, err := ctl.Service.Query.GetUsers()
@@ -43,8 +43,8 @@ func (ctl *EndpointController) GetUsers(ctx *gin.Context) {
 // @Produce json
 // @Success 201 {object} model.UserResponse "User created"
 // @Success 202 {object} model.UserResponse "User updated"
-// @Failure 400 {object} errmodel.ErrorResponse
-// @Failure 500 {object} errmodel.ErrorResponse
+// @Failure 400 {object} errormodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /users/{ipv4Address} [put]
 func (ctl *EndpointController) PutUser(ctx *gin.Context) {
 	ipv4Address := ctx.Param("ipv4Address")
@@ -75,8 +75,8 @@ func (ctl *EndpointController) PutUser(ctx *gin.Context) {
 // @Tags users
 // @Param ipv4Address path string true "IPv4 Address"
 // @Success 204 "No Content"
-// @Failure 404 {object} errmodel.ErrorResponse
-// @Failure 500 {object} errmodel.ErrorResponse
+// @Failure 404 {object} errormodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /users/{ipv4Address} [delete]
 func (ctl *EndpointController) DeleteUser(ctx *gin.Context) {
 	ipv4Address := ctx.Param("ipv4Address")

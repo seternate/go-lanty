@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	domainerr "github.com/seternate/go-lanty/internal/domain/error"
 	errorx "github.com/seternate/go-lanty/internal/interface/http/error"
-	"github.com/seternate/go-lanty/internal/interface/http/model"
+	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
 )
 
 // testResponseWriter wraps httptest.ResponseRecorder to track size properly
@@ -96,7 +96,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -121,7 +121,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -143,7 +143,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusConflict, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -165,7 +165,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -190,7 +190,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -215,7 +215,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusConflict, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -240,7 +240,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -265,7 +265,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}
@@ -292,7 +292,7 @@ func TestErrorHandler(t *testing.T) {
 			t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
 		}
 
-		var response model.ErrorResponse
+		var response errormodel.ErrorResponse
 		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
 			t.Fatalf("failed to unmarshal response: %v", err)
 		}

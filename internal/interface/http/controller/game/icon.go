@@ -12,10 +12,10 @@ import (
 	domainGame "github.com/seternate/go-lanty/internal/domain/game"
 	"github.com/seternate/go-lanty/internal/interface/http/adapter/header"
 	errorx "github.com/seternate/go-lanty/internal/interface/http/error"
-	model "github.com/seternate/go-lanty/internal/interface/http/model"
+	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
 )
 
-var _ = model.ErrorResponse{}
+var _ = errormodel.ErrorResponse{}
 
 // @Summary Get the icon of a Game
 // @Description Get the icon of a Game
@@ -24,8 +24,8 @@ var _ = model.ErrorResponse{}
 // @Produce image/*, application/json
 // @Success 200 {file} file "Icon binary data"
 // @Header 200 {string} Content-Digest "Checksum (RFC 9530: algorithm=base64_checksum)"
-// @Failure 404 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
+// @Failure 404 {object} errormodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /games/{slug}/icon [get]
 func (ctl *EndpointController) GetIcon(ctx *gin.Context) {
 	slug := ctx.Param("slug")
@@ -62,9 +62,9 @@ func (ctl *EndpointController) GetIcon(ctx *gin.Context) {
 // @Produce json
 // @Success 201 "Icon created"
 // @Success 202 "Icon updated"
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 404 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
+// @Failure 400 {object} errormodel.ErrorResponse
+// @Failure 404 {object} errormodel.ErrorResponse
+// @Failure 500 {object} errormodel.ErrorResponse
 // @Router /games/{slug}/icon [put]
 func (ctl *EndpointController) PutIcon(ctx *gin.Context) {
 	slug := ctx.Param("slug")

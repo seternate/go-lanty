@@ -25,14 +25,14 @@ const docTemplate = `{
     "paths": {
         "/games": {
             "get": {
-                "description": "Get a list of all available Games",
+                "description": "Get all available Games",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "games"
                 ],
-                "summary": "Get list of Games",
+                "summary": "Get all Games",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -46,10 +46,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
@@ -68,7 +65,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Slug of the Game",
+                        "description": "Slug",
                         "name": "slug",
                         "in": "path",
                         "required": true
@@ -81,37 +78,22 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.GameResponse"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Update or insert the given Game",
+                "description": "Create or update the given Game.",
                 "consumes": [
                     "application/json"
                 ],
@@ -121,17 +103,17 @@ const docTemplate = `{
                 "tags": [
                     "games"
                 ],
-                "summary": "Upsert a Game",
+                "summary": "Create or update a Game",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Slug of the Game",
+                        "description": "Slug",
                         "name": "slug",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Game to update or insert",
+                        "description": "Game to create or update",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -156,19 +138,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
@@ -182,7 +158,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Slug of the Game",
+                        "description": "Slug",
                         "name": "slug",
                         "in": "path",
                         "required": true
@@ -192,31 +168,16 @@ const docTemplate = `{
                     "204": {
                         "description": "No Content"
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
@@ -252,33 +213,25 @@ const docTemplate = `{
                             "Content-Digest": {
                                 "type": "string",
                                 "description": "Checksum (RFC 9530: algorithm=base64_checksum)"
-                            },
-                            "Content-Length": {
-                                "type": "string",
-                                "description": "Blob size"
-                            },
-                            "Content-Type": {
-                                "type": "string",
-                                "description": "MIME type"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Updates a Games blob. Requires Content-Digest header with checksum. Accepts raw binary data. The Content-Digest header must match the checksum of the uploaded blob data.",
+                "description": "Updates a Games blob.",
                 "consumes": [
                     "application/octet-stream"
                 ],
@@ -324,19 +277,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
@@ -344,9 +297,10 @@ const docTemplate = `{
         },
         "/games/{slug}/icon": {
             "get": {
-                "description": "Get the icon of a Game with metadata headers",
+                "description": "Get the icon of a Game",
                 "produces": [
-                    "image/*"
+                    "image/*",
+                    " application/json"
                 ],
                 "tags": [
                     "games"
@@ -355,7 +309,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Slug of the Game",
+                        "description": "Slug",
                         "name": "slug",
                         "in": "path",
                         "required": true
@@ -370,52 +324,29 @@ const docTemplate = `{
                         "headers": {
                             "Content-Digest": {
                                 "type": "string",
-                                "description": "Checksum in RFC 9530 format (algorithm=base64_checksum)"
-                            },
-                            "Content-Length": {
-                                "type": "string",
-                                "description": "Size of the icon"
-                            },
-                            "Content-Type": {
-                                "type": "string",
-                                "description": "MIME type of the icon"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request: missing slug parameter",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                                "description": "Checksum (RFC 9530: algorithm=base64_checksum)"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
             },
             "put": {
-                "description": "Creates or updates the icon for a Game. Requires Content-Digest header with checksum. Accepts icon data in two formats: 1) Raw binary data, or 2) multipart/form-data with exactly one file. The Content-Digest header must match the checksum of the uploaded file data.",
+                "description": "Updates a Games icon.\nAccepts icon data in two formats:\n1) Raw binary data\n2) multipart/form-data with exactly one file. The Content-Digest header must match the checksum of the uploaded file data.",
                 "consumes": [
                     "image/*",
-                    "multipart/form-data"
+                    " multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -423,81 +354,181 @@ const docTemplate = `{
                 "tags": [
                     "games"
                 ],
-                "summary": "Upsert icon for a Game",
+                "summary": "Update a Games icon",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Slug of the Game",
+                        "description": "Slug",
                         "name": "slug",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Checksum in RFC 9530 format (algorithm=base64_checksum)",
+                        "description": "Checksum (RFC 9530: algorithm=base64_checksum)",
                         "name": "Content-Digest",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "description": "Icon binary data",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     {
                         "type": "file",
                         "description": "Icon file (for multipart/form-data uploads). Exactly one file must be provided when using multipart format.",
                         "name": "file",
                         "in": "formData"
-                    },
-                    {
-                        "description": "Icon binary data (for raw image/* uploads).",
-                        "name": "request",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Icon created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                        "description": "Icon created"
                     },
                     "202": {
-                        "description": "Icon updated",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                        "description": "Icon updated"
                     },
                     "400": {
-                        "description": "Bad request: missing/invalid Content-Digest header, no file provided, multiple files provided, or invalid multipart form",
+                        "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "Get all available Users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get all Users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.UserResponse"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{ipv4Address}": {
+            "put": {
+                "description": "Create or update the given User.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create or update a User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "IPv4 Address",
+                        "name": "ipv4Address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User to create or update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpsertUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User created",
+                        "schema": {
+                            "$ref": "#/definitions/model.UserResponse"
+                        }
+                    },
+                    "202": {
+                        "description": "User updated",
+                        "schema": {
+                            "$ref": "#/definitions/model.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a User",
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "IPv4 Address",
+                        "name": "ipv4Address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errormodel.ErrorResponse"
                         }
                     }
                 }
@@ -505,22 +536,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.ErrorDescriptor": {
+        "errormodel.ErrorDescriptor": {
             "type": "object",
             "properties": {
-                "Code": {
+                "code": {
                     "type": "string"
                 },
-                "Message": {
+                "message": {
                     "type": "string"
                 }
             }
         },
-        "model.ErrorResponse": {
+        "errormodel.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
-                    "$ref": "#/definitions/model.ErrorDescriptor"
+                    "$ref": "#/definitions/errormodel.ErrorDescriptor"
                 }
             }
         },
@@ -739,6 +770,25 @@ const docTemplate = `{
                     }
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UpsertUserRequest": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.UserResponse": {
+            "type": "object",
+            "properties": {
+                "ipv4Address": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }

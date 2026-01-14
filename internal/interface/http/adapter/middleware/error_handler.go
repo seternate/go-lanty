@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	apperr "github.com/seternate/go-lanty/internal/application/error"
 	errorx "github.com/seternate/go-lanty/internal/interface/http/error"
-	"github.com/seternate/go-lanty/internal/interface/http/model"
+	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
 )
 
 func ErrorHandler(ctx *gin.Context) {
@@ -27,8 +27,8 @@ func ErrorHandler(ctx *gin.Context) {
 
 	httpErrDescriptor := errorx.DescribeError(err)
 	if httpErrDescriptor != nil {
-		ctx.JSON(errorx.HTTPStatusFromError(err), model.ErrorResponse{
-			Error: model.ErrorDescriptor{
+		ctx.JSON(errorx.HTTPStatusFromError(err), errormodel.ErrorResponse{
+			Error: errormodel.ErrorDescriptor{
 				Code:    httpErrDescriptor.Code,
 				Message: httpErrDescriptor.Message,
 			},
@@ -38,8 +38,8 @@ func ErrorHandler(ctx *gin.Context) {
 
 	appErrDescriptor := apperr.DescribeError(err)
 	if appErrDescriptor != nil {
-		ctx.JSON(errorx.HTTPStatusFromError(err), model.ErrorResponse{
-			Error: model.ErrorDescriptor{
+		ctx.JSON(errorx.HTTPStatusFromError(err), errormodel.ErrorResponse{
+			Error: errormodel.ErrorDescriptor{
 				Code:    appErrDescriptor.Code,
 				Message: appErrDescriptor.Message,
 			},
@@ -47,8 +47,8 @@ func ErrorHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{
-		Error: model.ErrorDescriptor{
+	ctx.JSON(http.StatusInternalServerError, errormodel.ErrorResponse{
+		Error: errormodel.ErrorDescriptor{
 			Code:    "internal",
 			Message: "Something went wrong unexpectedly. Please try again later.",
 		},

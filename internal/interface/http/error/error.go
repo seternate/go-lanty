@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	domainerr "github.com/seternate/go-lanty/internal/domain/error"
-	"github.com/seternate/go-lanty/internal/interface/http/model"
+	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
 )
 
 type ErrorCode string
@@ -129,14 +129,14 @@ func AbortWithError(ctx *gin.Context, err error) {
 	ctx.Abort()
 }
 
-func DescribeError(err error) *model.ErrorDescriptor {
+func DescribeError(err error) *errormodel.ErrorDescriptor {
 	if err == nil {
 		return nil
 	}
 
 	var httpErr *Error
 	if errors.As(err, &httpErr) {
-		return &model.ErrorDescriptor{
+		return &errormodel.ErrorDescriptor{
 			Code:    string(httpErr.Code),
 			Message: httpErr.Error(),
 		}

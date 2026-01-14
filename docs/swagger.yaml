@@ -1,15 +1,15 @@
 definitions:
-  model.ErrorDescriptor:
+  errormodel.ErrorDescriptor:
     properties:
-      Code:
+      code:
         type: string
-      Message:
+      message:
         type: string
     type: object
-  model.ErrorResponse:
+  errormodel.ErrorResponse:
     properties:
       error:
-        $ref: '#/definitions/model.ErrorDescriptor'
+        $ref: '#/definitions/errormodel.ErrorDescriptor'
     type: object
   model.GameExecutableArgResponse:
     properties:
@@ -155,6 +155,18 @@ definitions:
       name:
         type: string
     type: object
+  model.UpsertUserRequest:
+    properties:
+      username:
+        type: string
+    type: object
+  model.UserResponse:
+    properties:
+      ipv4Address:
+        type: string
+      username:
+        type: string
+    type: object
 externalDocs:
   description: Documentation
   url: https://github.com/seternate/go-lanty/blob/main/README.md
@@ -172,7 +184,7 @@ info:
 paths:
   /games:
     get:
-      description: Get a list of all available Games
+      description: Get all available Games
       produces:
       - application/json
       responses:
@@ -185,17 +197,15 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get list of Games
+            $ref: '#/definitions/errormodel.ErrorResponse'
+      summary: Get all Games
       tags:
       - games
   /games/{slug}:
     delete:
       description: Delete a Game
       parameters:
-      - description: Slug of the Game
+      - description: Slug
         in: path
         name: slug
         required: true
@@ -203,31 +213,21 @@ paths:
       responses:
         "204":
           description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
       summary: Delete a Game
       tags:
       - games
     get:
       description: Get a Game by its slug
       parameters:
-      - description: Slug of the Game
+      - description: Slug
         in: path
         name: slug
         required: true
@@ -239,38 +239,28 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/model.GameResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
       summary: Get a Game
       tags:
       - games
     put:
       consumes:
       - application/json
-      description: Update or insert the given Game
+      description: Create or update the given Game.
       parameters:
-      - description: Slug of the Game
+      - description: Slug
         in: path
         name: slug
         required: true
         type: string
-      - description: Game to update or insert
+      - description: Game to create or update
         in: body
         name: request
         required: true
@@ -290,16 +280,12 @@ paths:
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Upsert a Game
+            $ref: '#/definitions/errormodel.ErrorResponse'
+      summary: Create or update a Game
       tags:
       - games
   /games/{slug}/blob:
@@ -321,31 +307,23 @@ paths:
             Content-Digest:
               description: 'Checksum (RFC 9530: algorithm=base64_checksum)'
               type: string
-            Content-Length:
-              description: Blob size
-              type: string
-            Content-Type:
-              description: MIME type
-              type: string
           schema:
             type: file
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/errormodel.ErrorResponse'
       summary: Get a Games blob
       tags:
       - games
     put:
       consumes:
       - application/octet-stream
-      description: Updates a Games blob. Requires Content-Digest header with checksum.
-        Accepts raw binary data. The Content-Digest header must match the checksum
-        of the uploaded blob data.
+      description: Updates a Games blob.
       parameters:
       - description: Slug
         in: path
@@ -373,129 +351,180 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/errormodel.ErrorResponse'
       summary: Update a Games blob
       tags:
       - games
   /games/{slug}/icon:
     get:
-      description: Get the icon of a Game with metadata headers
+      description: Get the icon of a Game
       parameters:
-      - description: Slug of the Game
+      - description: Slug
         in: path
         name: slug
         required: true
         type: string
       produces:
       - image/*
+      - ' application/json'
       responses:
         "200":
           description: Icon binary data
           headers:
             Content-Digest:
-              description: Checksum in RFC 9530 format (algorithm=base64_checksum)
-              type: string
-            Content-Length:
-              description: Size of the icon
-              type: string
-            Content-Type:
-              description: MIME type of the icon
+              description: 'Checksum (RFC 9530: algorithm=base64_checksum)'
               type: string
           schema:
             type: file
-        "400":
-          description: 'Bad request: missing slug parameter'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
       summary: Get the icon of a Game
       tags:
       - games
     put:
       consumes:
       - image/*
-      - multipart/form-data
-      description: 'Creates or updates the icon for a Game. Requires Content-Digest
-        header with checksum. Accepts icon data in two formats: 1) Raw binary data,
-        or 2) multipart/form-data with exactly one file. The Content-Digest header
-        must match the checksum of the uploaded file data.'
+      - ' multipart/form-data'
+      description: |-
+        Updates a Games icon.
+        Accepts icon data in two formats:
+        1) Raw binary data
+        2) multipart/form-data with exactly one file. The Content-Digest header must match the checksum of the uploaded file data.
       parameters:
-      - description: Slug of the Game
+      - description: Slug
         in: path
         name: slug
         required: true
         type: string
-      - description: Checksum in RFC 9530 format (algorithm=base64_checksum)
+      - description: 'Checksum (RFC 9530: algorithm=base64_checksum)'
         in: header
         name: Content-Digest
         required: true
         type: string
+      - description: Icon binary data
+        in: body
+        name: request
+        schema:
+          type: string
       - description: Icon file (for multipart/form-data uploads). Exactly one file
           must be provided when using multipart format.
         in: formData
         name: file
         type: file
-      - description: Icon binary data (for raw image/* uploads).
-        in: body
-        name: request
-        schema:
-          type: string
       produces:
       - application/json
       responses:
         "201":
           description: Icon created
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "202":
           description: Icon updated
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "400":
-          description: 'Bad request: missing/invalid Content-Digest header, no file
-            provided, multiple files provided, or invalid multipart form'
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/errormodel.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Upsert icon for a Game
+            $ref: '#/definitions/errormodel.ErrorResponse'
+      summary: Update a Games icon
       tags:
       - games
+  /users:
+    get:
+      description: Get all available Users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UserResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errormodel.ErrorResponse'
+      summary: Get all Users
+      tags:
+      - users
+  /users/{ipv4Address}:
+    delete:
+      description: Delete a User
+      parameters:
+      - description: IPv4 Address
+        in: path
+        name: ipv4Address
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errormodel.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errormodel.ErrorResponse'
+      summary: Delete a User
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Create or update the given User.
+      parameters:
+      - description: IPv4 Address
+        in: path
+        name: ipv4Address
+        required: true
+        type: string
+      - description: User to create or update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpsertUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created
+          schema:
+            $ref: '#/definitions/model.UserResponse'
+        "202":
+          description: User updated
+          schema:
+            $ref: '#/definitions/model.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errormodel.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errormodel.ErrorResponse'
+      summary: Create or update a User
+      tags:
+      - users
 swagger: "2.0"
