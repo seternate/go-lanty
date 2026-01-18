@@ -32,7 +32,7 @@ import (
 )
 
 var AppVersion = "dev-build"
-var APIVersion = "v1.0.0" // TODO
+var APIVersion = "v1"
 
 // @title Lanty
 // @version dev
