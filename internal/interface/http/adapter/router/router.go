@@ -23,8 +23,8 @@ func New(controller *controller.HTTPController) *gin.Engine {
 	}
 
 	router := gin.New()
-	//TODO: Do we want to enable this?
-	// binding.EnableDecoderDisallowUnknownFields = true
+	//TODO: Would fail on unknown fields in the request body
+	//binding.EnableDecoderDisallowUnknownFields = true
 	router.RedirectTrailingSlash = true
 
 	router.Use(
