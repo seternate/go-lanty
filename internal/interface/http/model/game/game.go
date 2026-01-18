@@ -1,25 +1,17 @@
-package model
+package game
 
 import (
-	"time"
-
 	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
+	apimodel "github.com/seternate/go-lanty/pkg/api/models/game"
 )
 
-type GameResponse struct {
-	Slug        string                   `json:"slug"`
-	Name        string                   `json:"name"`
-	Executables []GameExecutableResponse `json:"executables"`
-	CreatedAt   time.Time                `json:"createdat"`
-}
-
-func NewGameResponse(gameView *appGameSrv.GameView) *GameResponse {
-	executables := make([]GameExecutableResponse, 0, len(gameView.Execs))
+func NewGame(gameView *appGameSrv.GameView) *apimodel.Game {
+	executables := make([]apimodel.Executable, 0, len(gameView.Execs))
 	for _, exec := range gameView.Execs {
-		executables = append(executables, *NewGameExecutableResponse(exec))
+		executables = append(executables, *NewExecutable(exec))
 	}
 
-	return &GameResponse{
+	return &apimodel.Game{
 		Slug:        gameView.Slug,
 		Name:        gameView.Name,
 		Executables: executables,
@@ -27,12 +19,7 @@ func NewGameResponse(gameView *appGameSrv.GameView) *GameResponse {
 	}
 }
 
-type UpsertGameRequest struct {
-	Name        string                        `json:"name"`
-	Executables []UpsertGameExecutableRequest `json:"executables"`
-}
-
-func (req *UpsertGameRequest) ToCommand(slug string) appGameSrv.UpsertGameCommand {
+func ToCommand(req *apimodel.UpsertGameRequest, slug string) appGameSrv.UpsertGameCommand {
 	executables := make([]appGameSrv.UpsertGameExecutable, 0, len(req.Executables))
 	for _, execReq := range req.Executables {
 		args := make([]appGameSrv.UpsertGameExecutableArg, 0, len(execReq.Args))

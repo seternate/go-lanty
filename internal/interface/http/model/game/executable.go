@@ -1,28 +1,17 @@
-package model
+package game
 
 import (
-	"time"
-
+	apimodel "github.com/seternate/go-lanty/pkg/api/models/game"
 	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 )
 
-type GameExecutableResponse struct {
-	Role              string                      `json:"role"`
-	Path              string                      `json:"path"`
-	RequiresAdmin     *bool                       `json:"requiresadmin"`
-	Format            *string                     `json:"format"`
-	ArgumentSeperator *string                     `json:"argumentseperator"`
-	Args              []GameExecutableArgResponse `json:"args"`
-	CreatedAt         time.Time                   `json:"createdat"`
-}
-
-func NewGameExecutableResponse(execView appGameSrv.GameExecView) *GameExecutableResponse {
-	args := make([]GameExecutableArgResponse, 0, len(execView.Args))
+func NewExecutable(execView appGameSrv.GameExecView) *apimodel.Executable {
+	args := make([]apimodel.Arg, 0, len(execView.Args))
 	for _, arg := range execView.Args {
-		args = append(args, *NewGameExecutableArgResponse(arg))
+		args = append(args, *NewArg(arg))
 	}
 
-	return &GameExecutableResponse{
+	return &apimodel.Executable{
 		Role:              execView.Role,
 		Path:              execView.Path,
 		RequiresAdmin:     execView.RequiresAdmin,
@@ -31,13 +20,4 @@ func NewGameExecutableResponse(execView appGameSrv.GameExecView) *GameExecutable
 		Args:              args,
 		CreatedAt:         execView.CreatedAt,
 	}
-}
-
-type UpsertGameExecutableRequest struct {
-	Role              string                           `json:"role"`
-	Path              string                           `json:"path"`
-	RequiresAdmin     *bool                            `json:"requiresadmin"`
-	Format            *string                          `json:"format"`
-	ArgumentSeperator *string                          `json:"argumentseperator"`
-	Args              []UpsertGameExecutableArgRequest `json:"args"`
 }

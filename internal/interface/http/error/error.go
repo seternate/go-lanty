@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	domainerr "github.com/seternate/go-lanty/internal/domain/error"
-	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
+	errormodel "github.com/seternate/go-lanty/pkg/api/models/error"
 )
 
 type ErrorCode string

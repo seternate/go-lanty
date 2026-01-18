@@ -1,4 +1,4 @@
-.PHONY: help run test test-coverage test-e2e swagger clean db-up db-down db-reset
+.PHONY: help run test-unit test-integration test-e2e test-all test-e2e-coverage swagger clean db-up db-down db-reset
 
 MAIN_PATH=./cmd/lantyd
 
@@ -14,16 +14,19 @@ run: ## Run the application locally
 	@echo "Running..."
 	go run $(MAIN_PATH) --db "postgres://lanty:lanty@localhost:5432/lanty?sslmode=disable" --loglevel "debug"
 
-test: ## Run all tests
-	@echo "Running tests..."
-	go test ./...
+test-unit: ## Run unit tests only (excludes integration tests, no cache)
+	@echo "Running unit tests..."
+	go test -count=1 ./... -tags='!integration'
 
-test-coverage: ## Run tests with coverage report
-	@echo "Running tests with coverage..."
-	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
-	go tool cover -func=coverage.out
+test-integration: ## Run integration tests only (requires DB, no cache)
+	@echo "Running integration tests..."
+	@echo "Make sure database is running (make db-up)"
+	@INTEGRATION_PACKAGES=$$(find . -name '*_integration_test.go' -exec dirname {} \; | sort -u | sed 's|^\./|./|' | sed 's|^\.$$|./|' | tr '\n' ' '); \
+	if [ -z "$$INTEGRATION_PACKAGES" ]; then \
+		echo "No integration tests found"; \
+		exit 0; \
+	fi; \
+	go test -count=1 -tags=integration $$INTEGRATION_PACKAGES
 
 test-e2e: ## Run e2e tests with venom
 	@echo "Running e2e tests with venom..."
@@ -32,8 +35,19 @@ test-e2e: ## Run e2e tests with venom
 		echo "venom not found. Install it with: go install github.com/ovh/venom/cmd/venom@latest"; \
 		exit 1; \
 	fi
-	@mkdir -p test-results
-	@venom run --output-dir test-results $$(find tests -name "*.venom.yml")
+	@venom run $$(find tests -name "*.venom.yml"); \
+	rm -f venom.log
+
+test-e2e-coverage: ## Run tests with coverage report
+	@echo "Running tests with coverage..."
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+	go tool cover -func=coverage.out
+
+test-all: ## Run unit, integration, and e2e tests sequentially (no cache for unit/integration)
+	@echo "Running all tests..."
+	$(MAKE) test-unit && $(MAKE) test-integration && $(MAKE) test-e2e
 
 swagger: ## Generate Swagger documentation
 	@echo "Generating Swagger documentation..."
@@ -47,7 +61,6 @@ swagger: ## Generate Swagger documentation
 
 clean: ## Remove artifacts
 	rm -f coverage.out coverage.html
-	rm -rf test-results/
 	@echo "Clean complete"
 
 db-up: ## Start database with migrations

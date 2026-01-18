@@ -6,18 +6,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	errorx "github.com/seternate/go-lanty/internal/interface/http/error"
-	errormodel "github.com/seternate/go-lanty/internal/interface/http/model/error"
-	model "github.com/seternate/go-lanty/internal/interface/http/model/game"
+	httpmodel "github.com/seternate/go-lanty/internal/interface/http/model/game"
+	errormodel "github.com/seternate/go-lanty/pkg/api/models/error"
+	gamemodel "github.com/seternate/go-lanty/pkg/api/models/game"
 )
 
-var _ = errormodel.ErrorResponse{}
+var _ = errormodel.Error{}
+var _ = gamemodel.Game{}
 
 // @Summary Get all Games
 // @Description Get all available Games
 // @Tags games
 // @Produce json
-// @Success 200 {array} model.GameResponse
-// @Failure 500 {object} errormodel.ErrorResponse
+// @Success 200 {array} gamemodel.Game
+// @Failure 500 {object} errormodel.Error
 // @Router /games [get]
 func (ctl *EndpointController) GetGames(ctx *gin.Context) {
 	games, err := ctl.Service.Query.GetGames()
@@ -26,9 +28,9 @@ func (ctl *EndpointController) GetGames(ctx *gin.Context) {
 		return
 	}
 
-	response := make([]*model.GameResponse, 0, len(games))
+	response := make([]*gamemodel.Game, 0, len(games))
 	for _, game := range games {
-		response = append(response, model.NewGameResponse(&game))
+		response = append(response, httpmodel.NewGame(&game))
 	}
 
 	ctx.JSON(http.StatusOK, response)
@@ -39,9 +41,9 @@ func (ctl *EndpointController) GetGames(ctx *gin.Context) {
 // @Tags games
 // @Param slug path string true "Slug"
 // @Produce json
-// @Success 200 {object} model.GameResponse
-// @Failure 404 {object} errormodel.ErrorResponse
-// @Failure 500 {object} errormodel.ErrorResponse
+// @Success 200 {object} gamemodel.Game
+// @Failure 404 {object} errormodel.Error
+// @Failure 500 {object} errormodel.Error
 // @Router /games/{slug} [get]
 func (ctl *EndpointController) GetGame(ctx *gin.Context) {
 	slug := ctx.Param("slug")
@@ -52,32 +54,32 @@ func (ctl *EndpointController) GetGame(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.NewGameResponse(game))
+	ctx.JSON(http.StatusOK, httpmodel.NewGame(game))
 }
 
 // @Summary Create or update a Game
 // @Description Create or update the given Game.
 // @Tags games
 // @Param slug path string true "Slug"
-// @Param request body model.UpsertGameRequest true "Game to create or update"
+// @Param request body gamemodel.UpsertGameRequest true "Game to create or update"
 // @Accept json
 // @Produce json
-// @Success 201 {object} model.GameResponse "Game created"
-// @Success 202 {object} model.GameResponse "Game updated"
-// @Failure 400 {object} errormodel.ErrorResponse
-// @Failure 500 {object} errormodel.ErrorResponse
+// @Success 201 {object} gamemodel.Game "Game created"
+// @Success 202 {object} gamemodel.Game "Game updated"
+// @Failure 400 {object} errormodel.Error
+// @Failure 500 {object} errormodel.Error
 // @Router /games/{slug} [put]
 func (ctl *EndpointController) PutGame(ctx *gin.Context) {
 	slug := ctx.Param("slug")
 
-	upsertRequest := &model.UpsertGameRequest{}
+	upsertRequest := &gamemodel.UpsertGameRequest{}
 	err := ctx.BindJSON(upsertRequest)
 	if err != nil {
 		errorx.AbortWithError(ctx, errorx.ErrBadRequest("failed to read request body").WithCause(err))
 		return
 	}
 
-	_, created, err := ctl.Service.Command.UpsertGame(upsertRequest.ToCommand(slug))
+	_, created, err := ctl.Service.Command.UpsertGame(httpmodel.ToCommand(upsertRequest, slug))
 	if err != nil {
 		errorx.AbortWithError(ctx, fmt.Errorf("failed to upsert game: %w", err))
 		return
@@ -90,11 +92,11 @@ func (ctl *EndpointController) PutGame(ctx *gin.Context) {
 	}
 
 	if created {
-		ctx.JSON(http.StatusCreated, model.NewGameResponse(gameView))
+		ctx.JSON(http.StatusCreated, httpmodel.NewGame(gameView))
 		return
 	}
 
-	ctx.JSON(http.StatusAccepted, model.NewGameResponse(gameView))
+	ctx.JSON(http.StatusAccepted, httpmodel.NewGame(gameView))
 }
 
 // @Summary Delete a Game
@@ -102,8 +104,8 @@ func (ctl *EndpointController) PutGame(ctx *gin.Context) {
 // @Tags games
 // @Param slug path string true "Slug"
 // @Success 204 "No Content"
-// @Failure 404 {object} errormodel.ErrorResponse
-// @Failure 500 {object} errormodel.ErrorResponse
+// @Failure 404 {object} errormodel.Error
+// @Failure 500 {object} errormodel.Error
 // @Router /games/{slug} [delete]
 func (ctl *EndpointController) DeleteGame(ctx *gin.Context) {
 	slug := ctx.Param("slug")

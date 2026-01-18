@@ -1,35 +1,12 @@
-package model
+package game
 
 import (
-	"time"
-
+	apimodel "github.com/seternate/go-lanty/pkg/api/models/game"
 	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 )
 
-type GameExecutableArgResponse struct {
-	Role              string    `json:"role"`
-	Required          *bool     `json:"required"`
-	Enabled           *bool     `json:"enabled"`
-	Format            *string   `json:"format"`
-	ArgumentSeparator *string   `json:"argumentseperator"`
-	Argument          string    `json:"argument"`
-	Description       *string   `json:"description"`
-	DefaultString     *string   `json:"defaultstring"`
-	DefaultBool       *bool     `json:"defaultbool"`
-	DefaultInt        *int64    `json:"defaultint"`
-	DefaultFloat      *float64  `json:"defaultfloat"`
-	EnumValues        []string  `json:"enumvalues"`
-	MinInt            *int64    `json:"minint"`
-	MaxInt            *int64    `json:"maxint"`
-	MinFloat          *float64  `json:"minfloat"`
-	MaxFloat          *float64  `json:"maxfloat"`
-	FloatPrecision    *int64    `json:"floatprecision"`
-	OrderIndex        int64     `json:"orderindex"`
-	CreatedAt         time.Time `json:"createdat"`
-}
-
-func NewGameExecutableArgResponse(argView appGameSrv.GameArgView) *GameExecutableArgResponse {
-	return &GameExecutableArgResponse{
+func NewArg(argView appGameSrv.GameArgView) *apimodel.Arg {
+	return &apimodel.Arg{
 		Role:              argView.Role,
 		Required:          argView.Required,
 		Enabled:           argView.Enabled,
@@ -50,26 +27,4 @@ func NewGameExecutableArgResponse(argView appGameSrv.GameArgView) *GameExecutabl
 		OrderIndex:        argView.OrderIndex,
 		CreatedAt:         argView.CreatedAt,
 	}
-}
-
-type UpsertGameExecutableArgRequest struct {
-	Role              string   `json:"role"`
-	Name              string   `json:"name"`
-	Required          *bool    `json:"required"`
-	Enabled           *bool    `json:"enabled"`
-	Format            *string  `json:"format"`
-	ArgumentSeparator *string  `json:"argumentseperator"`
-	Argument          string   `json:"argument"`
-	Description       *string  `json:"description"`
-	DefaultString     *string  `json:"defaultstring"`
-	DefaultBool       *bool    `json:"defaultbool"`
-	DefaultInt        *int64   `json:"defaultint"`
-	DefaultFloat      *float64 `json:"defaultfloat"`
-	EnumValues        []string `json:"enumvalues"`
-	MinInt            *int64   `json:"minint"`
-	MaxInt            *int64   `json:"maxint"`
-	MinFloat          *float64 `json:"minfloat"`
-	MaxFloat          *float64 `json:"maxfloat"`
-	FloatPrecision    *int64   `json:"floatprecision"`
-	OrderIndex        int64    `json:"orderindex"`
 }

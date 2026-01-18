@@ -1,15 +1,15 @@
-package model
+package game
 
 import (
 	"testing"
 	"time"
 
+	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 )
 
-func TestNewGameExecutableArgResponse(t *testing.T) {
+func TestNewArg(t *testing.T) {
 	t.Run("all fields populated", func(t *testing.T) {
 		required := true
 		enabled := false
@@ -52,7 +52,7 @@ func TestNewGameExecutableArgResponse(t *testing.T) {
 			CreatedAt:      createdAt,
 		}
 
-		result := NewGameExecutableArgResponse(argView)
+		result := NewArg(argView)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "test-role", result.Role)
@@ -87,7 +87,7 @@ func TestNewGameExecutableArgResponse(t *testing.T) {
 			CreatedAt:  createdAt,
 		}
 
-		result := NewGameExecutableArgResponse(argView)
+		result := NewArg(argView)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "test-role", result.Role)
@@ -137,7 +137,7 @@ func TestNewGameExecutableArgResponse(t *testing.T) {
 			CreatedAt:      createdAt,
 		}
 
-		result := NewGameExecutableArgResponse(argView)
+		result := NewArg(argView)
 
 		require.NotNil(t, result)
 		assert.Nil(t, result.Required)
@@ -169,7 +169,7 @@ func TestNewGameExecutableArgResponse(t *testing.T) {
 			CreatedAt:  createdAt,
 		}
 
-		result := NewGameExecutableArgResponse(argView)
+		result := NewArg(argView)
 
 		require.NotNil(t, result)
 		assert.NotNil(t, result.EnumValues)

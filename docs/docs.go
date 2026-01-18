@@ -39,14 +39,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.GameResponse"
+                                "$ref": "#/definitions/gamemodel.Game"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -75,19 +75,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.GameResponse"
+                            "$ref": "#/definitions/gamemodel.Game"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -118,7 +118,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpsertGameRequest"
+                            "$ref": "#/definitions/gamemodel.UpsertGameRequest"
                         }
                     }
                 ],
@@ -126,25 +126,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Game created",
                         "schema": {
-                            "$ref": "#/definitions/model.GameResponse"
+                            "$ref": "#/definitions/gamemodel.Game"
                         }
                     },
                     "202": {
                         "description": "Game updated",
                         "schema": {
-                            "$ref": "#/definitions/model.GameResponse"
+                            "$ref": "#/definitions/gamemodel.Game"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -171,13 +171,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -219,13 +219,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -277,19 +277,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -331,13 +331,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -395,19 +395,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -429,14 +429,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/model.UserResponse"
+                                "$ref": "#/definitions/usermodel.User"
                             }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -469,7 +469,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpsertUserRequest"
+                            "$ref": "#/definitions/usermodel.UpsertUserRequest"
                         }
                     }
                 ],
@@ -477,25 +477,25 @@ const docTemplate = `{
                     "201": {
                         "description": "User created",
                         "schema": {
-                            "$ref": "#/definitions/model.UserResponse"
+                            "$ref": "#/definitions/usermodel.User"
                         }
                     },
                     "202": {
                         "description": "User updated",
                         "schema": {
-                            "$ref": "#/definitions/model.UserResponse"
+                            "$ref": "#/definitions/usermodel.User"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -522,13 +522,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errormodel.ErrorResponse"
+                            "$ref": "#/definitions/errormodel.Error"
                         }
                     }
                 }
@@ -536,6 +536,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "errormodel.Error": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errormodel.ErrorDescriptor"
+                }
+            }
+        },
         "errormodel.ErrorDescriptor": {
             "type": "object",
             "properties": {
@@ -547,15 +555,7 @@ const docTemplate = `{
                 }
             }
         },
-        "errormodel.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "$ref": "#/definitions/errormodel.ErrorDescriptor"
-                }
-            }
-        },
-        "model.GameExecutableArgResponse": {
+        "gamemodel.Arg": {
             "type": "object",
             "properties": {
                 "argument": {
@@ -620,13 +620,13 @@ const docTemplate = `{
                 }
             }
         },
-        "model.GameExecutableResponse": {
+        "gamemodel.Executable": {
             "type": "object",
             "properties": {
                 "args": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.GameExecutableArgResponse"
+                        "$ref": "#/definitions/gamemodel.Arg"
                     }
                 },
                 "argumentseperator": {
@@ -649,7 +649,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.GameResponse": {
+        "gamemodel.Game": {
             "type": "object",
             "properties": {
                 "createdat": {
@@ -658,7 +658,7 @@ const docTemplate = `{
                 "executables": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.GameExecutableResponse"
+                        "$ref": "#/definitions/gamemodel.Executable"
                     }
                 },
                 "name": {
@@ -669,7 +669,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpsertGameExecutableArgRequest": {
+        "gamemodel.UpsertGameExecutableArgRequest": {
             "type": "object",
             "properties": {
                 "argument": {
@@ -734,13 +734,13 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpsertGameExecutableRequest": {
+        "gamemodel.UpsertGameExecutableRequest": {
             "type": "object",
             "properties": {
                 "args": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.UpsertGameExecutableArgRequest"
+                        "$ref": "#/definitions/gamemodel.UpsertGameExecutableArgRequest"
                     }
                 },
                 "argumentseperator": {
@@ -760,13 +760,13 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpsertGameRequest": {
+        "gamemodel.UpsertGameRequest": {
             "type": "object",
             "properties": {
                 "executables": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.UpsertGameExecutableRequest"
+                        "$ref": "#/definitions/gamemodel.UpsertGameExecutableRequest"
                     }
                 },
                 "name": {
@@ -774,7 +774,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UpsertUserRequest": {
+        "usermodel.UpsertUserRequest": {
             "type": "object",
             "properties": {
                 "username": {
@@ -782,7 +782,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.UserResponse": {
+        "usermodel.User": {
             "type": "object",
             "properties": {
                 "ipv4Address": {

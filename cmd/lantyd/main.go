@@ -25,14 +25,14 @@ import (
 	"github.com/seternate/go-lanty/internal/interface/http/adapter/server"
 	"github.com/seternate/go-lanty/internal/interface/http/adapter/swagger"
 	"github.com/seternate/go-lanty/internal/interface/http/controller"
+	"github.com/seternate/go-lanty/pkg/api/paths"
 	"github.com/seternate/go-lanty/pkg/logging"
 	"github.com/spf13/afero"
 	"golang.org/x/sync/errgroup"
 )
 
 var AppVersion = "dev-build"
-var APIVersion = "v1.0.0"
-var BasePath = "/api/v1"
+var APIVersion = "v1.0.0" // TODO
 
 // @title Lanty
 // @version dev
@@ -133,7 +133,7 @@ func main() {
 
 	controller := controller.New(appgameservice, appuserservice)
 	engine := router.New(controller)
-	swagger.InitInfo(APIVersion, config.Host, config.Port, router.APIBasePath, []string{config.Scheme})
+	swagger.InitInfo(APIVersion, config.Host, config.Port, paths.APIBasePath, []string{config.Scheme})
 	httpserver := server.Init(errCtx, engine)
 
 	if config.Scheme == "http" {

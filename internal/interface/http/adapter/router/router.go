@@ -10,12 +10,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/seternate/go-lanty/internal/interface/http/adapter/middleware"
 	"github.com/seternate/go-lanty/internal/interface/http/controller"
+	"github.com/seternate/go-lanty/pkg/api/paths"
 	swaggerfiles "github.com/swaggo/files"
 	ginswagger "github.com/swaggo/gin-swagger"
-)
-
-const (
-	APIBasePath string = "/api/v1"
 )
 
 func New(controller *controller.HTTPController) *gin.Engine {
@@ -59,26 +56,24 @@ func addHealthRoutes(router *gin.Engine) {
 }
 
 func addAPIRoutes(r *gin.Engine, controller *controller.HTTPController) {
-	api := r.Group(APIBasePath)
+	api := r.Group(paths.APIBasePath)
 
-	gameAPI := api.Group("/games")
-	{
-		gameAPI.GET("", controller.Game.GetGames)
-		gameAPI.GET("/:slug", controller.Game.GetGame)
-		gameAPI.PUT("/:slug", controller.Game.PutGame)
-		gameAPI.DELETE("/:slug", controller.Game.DeleteGame)
-
-		gameAPI.GET("/:slug/icon", controller.Game.GetIcon)
-		gameAPI.PUT("/:slug/icon", controller.Game.PutIcon)
-
-		gameAPI.GET("/:slug/blob", controller.Game.GetBlob)
-		gameAPI.PUT("/:slug/blob", controller.Game.PutBlob)
+	apiPaths := map[paths.Path][]gin.HandlerFunc{
+		paths.GetGames:    {controller.Game.GetGames},
+		paths.GetGame:     {controller.Game.GetGame},
+		paths.PutGame:     {controller.Game.PutGame},
+		paths.DeleteGame:  {controller.Game.DeleteGame},
+		paths.GetGameIcon: {controller.Game.GetIcon},
+		paths.PutGameIcon: {controller.Game.PutIcon},
+		paths.GetGameBlob: {controller.Game.GetBlob},
+		paths.PutGameBlob: {controller.Game.PutBlob},
+		paths.GetUsers:    {controller.User.GetUsers},
+		paths.PutUser:     {controller.User.PutUser},
+		paths.DeleteUser:  {controller.User.DeleteUser},
 	}
 
-	userAPI := api.Group("/users")
-	{
-		userAPI.GET("", controller.User.GetUsers)
-		userAPI.PUT("/:ipv4Address", controller.User.PutUser)
-		userAPI.DELETE("/:ipv4Address", controller.User.DeleteUser)
+	for path, handlers := range apiPaths {
+		api.Handle(path.Method, path.Template, handlers...)
 	}
+
 }

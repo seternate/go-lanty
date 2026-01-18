@@ -1,4 +1,9 @@
 definitions:
+  errormodel.Error:
+    properties:
+      error:
+        $ref: '#/definitions/errormodel.ErrorDescriptor'
+    type: object
   errormodel.ErrorDescriptor:
     properties:
       code:
@@ -6,12 +11,7 @@ definitions:
       message:
         type: string
     type: object
-  errormodel.ErrorResponse:
-    properties:
-      error:
-        $ref: '#/definitions/errormodel.ErrorDescriptor'
-    type: object
-  model.GameExecutableArgResponse:
+  gamemodel.Arg:
     properties:
       argument:
         type: string
@@ -54,11 +54,11 @@ definitions:
       role:
         type: string
     type: object
-  model.GameExecutableResponse:
+  gamemodel.Executable:
     properties:
       args:
         items:
-          $ref: '#/definitions/model.GameExecutableArgResponse'
+          $ref: '#/definitions/gamemodel.Arg'
         type: array
       argumentseperator:
         type: string
@@ -73,20 +73,20 @@ definitions:
       role:
         type: string
     type: object
-  model.GameResponse:
+  gamemodel.Game:
     properties:
       createdat:
         type: string
       executables:
         items:
-          $ref: '#/definitions/model.GameExecutableResponse'
+          $ref: '#/definitions/gamemodel.Executable'
         type: array
       name:
         type: string
       slug:
         type: string
     type: object
-  model.UpsertGameExecutableArgRequest:
+  gamemodel.UpsertGameExecutableArgRequest:
     properties:
       argument:
         type: string
@@ -129,11 +129,11 @@ definitions:
       role:
         type: string
     type: object
-  model.UpsertGameExecutableRequest:
+  gamemodel.UpsertGameExecutableRequest:
     properties:
       args:
         items:
-          $ref: '#/definitions/model.UpsertGameExecutableArgRequest'
+          $ref: '#/definitions/gamemodel.UpsertGameExecutableArgRequest'
         type: array
       argumentseperator:
         type: string
@@ -146,21 +146,21 @@ definitions:
       role:
         type: string
     type: object
-  model.UpsertGameRequest:
+  gamemodel.UpsertGameRequest:
     properties:
       executables:
         items:
-          $ref: '#/definitions/model.UpsertGameExecutableRequest'
+          $ref: '#/definitions/gamemodel.UpsertGameExecutableRequest'
         type: array
       name:
         type: string
     type: object
-  model.UpsertUserRequest:
+  usermodel.UpsertUserRequest:
     properties:
       username:
         type: string
     type: object
-  model.UserResponse:
+  usermodel.User:
     properties:
       ipv4Address:
         type: string
@@ -192,12 +192,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.GameResponse'
+              $ref: '#/definitions/gamemodel.Game'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Get all Games
       tags:
       - games
@@ -216,11 +216,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Delete a Game
       tags:
       - games
@@ -238,15 +238,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.GameResponse'
+            $ref: '#/definitions/gamemodel.Game'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Get a Game
       tags:
       - games
@@ -265,26 +265,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/model.UpsertGameRequest'
+          $ref: '#/definitions/gamemodel.UpsertGameRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Game created
           schema:
-            $ref: '#/definitions/model.GameResponse'
+            $ref: '#/definitions/gamemodel.Game'
         "202":
           description: Game updated
           schema:
-            $ref: '#/definitions/model.GameResponse'
+            $ref: '#/definitions/gamemodel.Game'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Create or update a Game
       tags:
       - games
@@ -312,11 +312,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Get a Games blob
       tags:
       - games
@@ -351,15 +351,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Update a Games blob
       tags:
       - games
@@ -387,11 +387,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Get the icon of a Game
       tags:
       - games
@@ -435,15 +435,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Update a Games icon
       tags:
       - games
@@ -457,12 +457,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.UserResponse'
+              $ref: '#/definitions/usermodel.User'
             type: array
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Get all Users
       tags:
       - users
@@ -481,11 +481,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Delete a User
       tags:
       - users
@@ -504,26 +504,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/model.UpsertUserRequest'
+          $ref: '#/definitions/usermodel.UpsertUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: User created
           schema:
-            $ref: '#/definitions/model.UserResponse'
+            $ref: '#/definitions/usermodel.User'
         "202":
           description: User updated
           schema:
-            $ref: '#/definitions/model.UserResponse'
+            $ref: '#/definitions/usermodel.User'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errormodel.ErrorResponse'
+            $ref: '#/definitions/errormodel.Error'
       summary: Create or update a User
       tags:
       - users

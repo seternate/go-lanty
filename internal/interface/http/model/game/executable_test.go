@@ -1,15 +1,15 @@
-package model
+package game
 
 import (
 	"testing"
 	"time"
 
+	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 )
 
-func TestNewGameExecutableResponse(t *testing.T) {
+func TestNewExecutable(t *testing.T) {
 	t.Run("all fields populated with args", func(t *testing.T) {
 		requiresAdmin := true
 		format := "exe"
@@ -37,7 +37,7 @@ func TestNewGameExecutableResponse(t *testing.T) {
 			Args:          []appGameSrv.GameArgView{argView},
 		}
 
-		result := NewGameExecutableResponse(execView)
+		result := NewExecutable(execView)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "launcher", result.Role)
@@ -62,7 +62,7 @@ func TestNewGameExecutableResponse(t *testing.T) {
 			Args:      []appGameSrv.GameArgView{},
 		}
 
-		result := NewGameExecutableResponse(execView)
+		result := NewExecutable(execView)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "launcher", result.Role)
@@ -89,7 +89,7 @@ func TestNewGameExecutableResponse(t *testing.T) {
 			Args:          nil,
 		}
 
-		result := NewGameExecutableResponse(execView)
+		result := NewExecutable(execView)
 
 		require.NotNil(t, result)
 		assert.Nil(t, result.RequiresAdmin)
@@ -126,7 +126,7 @@ func TestNewGameExecutableResponse(t *testing.T) {
 			Args:      []appGameSrv.GameArgView{arg1, arg2},
 		}
 
-		result := NewGameExecutableResponse(execView)
+		result := NewExecutable(execView)
 
 		require.NotNil(t, result)
 		require.Len(t, result.Args, 2)

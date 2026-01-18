@@ -1,15 +1,16 @@
-package model
+package game
 
 import (
 	"testing"
 	"time"
 
+	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
+	apimodel "github.com/seternate/go-lanty/pkg/api/models/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appGameSrv "github.com/seternate/go-lanty/internal/application/game"
 )
 
-func TestNewGameResponse(t *testing.T) {
+func TestNewGame(t *testing.T) {
 	t.Run("all fields populated with executables", func(t *testing.T) {
 		createdAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
@@ -39,7 +40,7 @@ func TestNewGameResponse(t *testing.T) {
 			},
 		}
 
-		result := NewGameResponse(gameView)
+		result := NewGame(gameView)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "test-game", result.Slug)
@@ -66,7 +67,7 @@ func TestNewGameResponse(t *testing.T) {
 			Execs:     map[string]appGameSrv.GameExecView{},
 		}
 
-		result := NewGameResponse(gameView)
+		result := NewGame(gameView)
 
 		require.NotNil(t, result)
 		assert.Equal(t, "test-game", result.Slug)
@@ -106,7 +107,7 @@ func TestNewGameResponse(t *testing.T) {
 			},
 		}
 
-		result := NewGameResponse(gameView)
+		result := NewGame(gameView)
 
 		require.NotNil(t, result)
 		require.Len(t, result.Executables, 1)
@@ -117,7 +118,7 @@ func TestNewGameResponse(t *testing.T) {
 	})
 }
 
-func TestUpsertGameRequest_ToCommand(t *testing.T) {
+func TestToCommand(t *testing.T) {
 	t.Run("all fields populated", func(t *testing.T) {
 		requiresAdmin := true
 		format := "exe"
@@ -134,16 +135,16 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 		maxFloat := 100.0
 		floatPrecision := int64(2)
 
-		req := &UpsertGameRequest{
+		req := &apimodel.UpsertGameRequest{
 			Name: "Test Game",
-			Executables: []UpsertGameExecutableRequest{
+			Executables: []apimodel.UpsertGameExecutableRequest{
 				{
 					Role:              "launcher",
 					Path:              "/path/to/launcher",
 					RequiresAdmin:     &requiresAdmin,
 					Format:            &format,
 					ArgumentSeperator: &argSeparator,
-					Args: []UpsertGameExecutableArgRequest{
+					Args: []apimodel.UpsertGameExecutableArgRequest{
 						{
 							Role:              "arg-role",
 							Name:              "arg-name",
@@ -170,7 +171,7 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 		}
 
 		slug := "test-game"
-		cmd := req.ToCommand(slug)
+		cmd := ToCommand(req, slug)
 
 		assert.Equal(t, slug, cmd.Slug)
 		assert.Equal(t, "Test Game", cmd.Name)
@@ -202,13 +203,13 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 	})
 
 	t.Run("minimal fields", func(t *testing.T) {
-		req := &UpsertGameRequest{
+		req := &apimodel.UpsertGameRequest{
 			Name:        "Test Game",
-			Executables: []UpsertGameExecutableRequest{},
+			Executables: []apimodel.UpsertGameExecutableRequest{},
 		}
 
 		slug := "test-game"
-		cmd := req.ToCommand(slug)
+		cmd := ToCommand(req, slug)
 
 		assert.Equal(t, slug, cmd.Slug)
 		assert.Equal(t, "Test Game", cmd.Name)
@@ -217,24 +218,24 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 	})
 
 	t.Run("multiple executables", func(t *testing.T) {
-		req := &UpsertGameRequest{
+		req := &apimodel.UpsertGameRequest{
 			Name: "Test Game",
-			Executables: []UpsertGameExecutableRequest{
+			Executables: []apimodel.UpsertGameExecutableRequest{
 				{
 					Role: "launcher",
 					Path: "/path/to/launcher",
-					Args: []UpsertGameExecutableArgRequest{},
+					Args: []apimodel.UpsertGameExecutableArgRequest{},
 				},
 				{
 					Role: "uninstaller",
 					Path: "/path/to/uninstaller",
-					Args: []UpsertGameExecutableArgRequest{},
+					Args: []apimodel.UpsertGameExecutableArgRequest{},
 				},
 			},
 		}
 
 		slug := "test-game"
-		cmd := req.ToCommand(slug)
+		cmd := ToCommand(req, slug)
 
 		assert.Equal(t, slug, cmd.Slug)
 		assert.Equal(t, "Test Game", cmd.Name)
@@ -246,23 +247,23 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 	})
 
 	t.Run("executable with multiple args", func(t *testing.T) {
-		req := &UpsertGameRequest{
+		req := &apimodel.UpsertGameRequest{
 			Name: "Test Game",
-			Executables: []UpsertGameExecutableRequest{
+			Executables: []apimodel.UpsertGameExecutableRequest{
 				{
 					Role: "launcher",
 					Path: "/path/to/launcher",
-					Args: []UpsertGameExecutableArgRequest{
+					Args: []apimodel.UpsertGameExecutableArgRequest{
 						{
-							Role:     "arg1",
-							Name:     "name1",
-							Argument: "--arg1",
+							Role:       "arg1",
+							Name:       "name1",
+							Argument:   "--arg1",
 							OrderIndex: 0,
 						},
 						{
-							Role:     "arg2",
-							Name:     "name2",
-							Argument: "--arg2",
+							Role:       "arg2",
+							Name:       "name2",
+							Argument:   "--arg2",
 							OrderIndex: 1,
 						},
 					},
@@ -271,7 +272,7 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 		}
 
 		slug := "test-game"
-		cmd := req.ToCommand(slug)
+		cmd := ToCommand(req, slug)
 
 		require.Len(t, cmd.Executables, 1)
 		require.Len(t, cmd.Executables[0].Args, 2)
@@ -282,16 +283,16 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 	})
 
 	t.Run("nil pointer fields", func(t *testing.T) {
-		req := &UpsertGameRequest{
+		req := &apimodel.UpsertGameRequest{
 			Name: "Test Game",
-			Executables: []UpsertGameExecutableRequest{
+			Executables: []apimodel.UpsertGameExecutableRequest{
 				{
 					Role:              "launcher",
 					Path:              "/path/to/launcher",
 					RequiresAdmin:     nil,
 					Format:            nil,
 					ArgumentSeperator: nil,
-					Args: []UpsertGameExecutableArgRequest{
+					Args: []apimodel.UpsertGameExecutableArgRequest{
 						{
 							Role:              "arg-role",
 							Name:              "arg-name",
@@ -318,7 +319,7 @@ func TestUpsertGameRequest_ToCommand(t *testing.T) {
 		}
 
 		slug := "test-game"
-		cmd := req.ToCommand(slug)
+		cmd := ToCommand(req, slug)
 
 		assert.Equal(t, slug, cmd.Slug)
 		require.Len(t, cmd.Executables, 1)
